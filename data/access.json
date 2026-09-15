@@ -71,6 +71,23 @@
       "language": "ar",
       "createdAt": "2026-09-15T22:44:52.198Z",
       "expiresAt": null
+    },
+    {
+      "id": "trainee-mu3asfe6-sdp2gw",
+      "tokenHash": "d674923f91081cddbeafd80fea7e5a6f8f70c175971df067184f4df1eb428bb4",
+      "active": true,
+      "mode": "live",
+      "liveBundle": "course-live.json",
+      "wrappedKey": {
+        "alg": "AES-GCM-256",
+        "nonce": "_3E6yExk_kYmN8qO",
+        "ciphertext": "FnihNlKm2ZaZOpYFxj3Tc8_0lE4amLotPtWp0WQumGnmv1PfhtsPiAl1sgPk3oIGcwqJxv1jDOK_4i0",
+        "kdf": "SHA-256(token)"
+      },
+      "label": "ssdfhdf",
+      "language": "ar",
+      "createdAt": "2026-09-15T23:23:21.204Z",
+      "expiresAt": null
     }
   ]
 }
