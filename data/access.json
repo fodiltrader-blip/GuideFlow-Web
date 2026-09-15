@@ -88,6 +88,23 @@
       "language": "ar",
       "createdAt": "2026-09-15T23:23:21.204Z",
       "expiresAt": null
+    },
+    {
+      "id": "trainee-mu3aw3jg-6x937w",
+      "tokenHash": "d3cc1c19ada5b1dabe9e568df4f0893156d6c475c4835a6f944b58b76093bf72",
+      "active": true,
+      "mode": "live",
+      "liveBundle": "course-live.json",
+      "wrappedKey": {
+        "alg": "AES-GCM-256",
+        "nonce": "WOD_aUVT-b1GrNnu",
+        "ciphertext": "CS6nnFb5iVEPZwupaE7LH4DbUOUUSZNOMsEnNlUz_LwgwfLKfiY6zAQM3Z4DQb3UXSdGkA5W_cL8C-U",
+        "kdf": "SHA-256(token)"
+      },
+      "label": "سيلبس",
+      "language": "ar",
+      "createdAt": "2026-09-15T23:26:12.745Z",
+      "expiresAt": null
     }
   ]
 }
