@@ -1,25 +1,71 @@
 (() => {
-  const mediaForLesson = () => {
-    const title = document.querySelector('.lesson-intro h1')?.textContent?.trim() || '';
-    const tool = document.querySelector('.lesson-meta b')?.textContent?.trim() || '';
-    const lang = document.documentElement.lang || 'ar';
+  let cachedVersion = '';
+  let cachedMap = null;
+  let loading = null;
 
-    if (/AdsPower/i.test(tool)) {
-      return lang === 'fr' ? './media/adspower-fr.svg' : './media/adspower-ar.svg';
+  async function currentRelease() {
+    if (window.GuideFlowRelease?.current?.mode === 'versioned') return window.GuideFlowRelease.current;
+    if (window.GuideFlowRelease?.refresh) return window.GuideFlowRelease.refresh();
+    try {
+      const response = await fetch(`./data/current.json?v=${Date.now()}`, { cache: 'no-store' });
+      if (!response.ok) return null;
+      return response.json();
+    } catch {
+      return null;
     }
+  }
 
-    if (/IPRoyal/i.test(tool)) {
-      if (/ما هو|Qu.?est-ce/i.test(title)) return './media/iproyal-intro.svg';
-      if (/سحب|Récupérer|proxy/i.test(title)) return './media/iproyal-proxy.svg';
-    }
+  async function releaseVisualMap() {
+    const current = await currentRelease();
+    if (!current?.version || !current?.assetBase) return { current: null, map: null };
+    if (cachedVersion === current.version && cachedMap) return { current, map: cachedMap };
+    if (loading) return loading;
 
+    loading = (async () => {
+      try {
+        const base = `./${String(current.assetBase).replace(/^\.\//, '').replace(/\/?$/, '/')}`;
+        const response = await fetch(`${base}visual-map.json`, { cache: 'default' });
+        const map = response.ok ? await response.json() : null;
+        cachedVersion = current.version;
+        cachedMap = map;
+        return { current, map };
+      } catch {
+        return { current, map: null };
+      } finally {
+        loading = null;
+      }
+    })();
+    return loading;
+  }
+
+  function legacyFile(lessonId, lang) {
+    if (lessonId === 'adspower-interface') return lang === 'fr' ? 'adspower-fr.svg' : 'adspower-ar.svg';
+    if (lessonId === 'iproyal-intro') return 'iproyal-intro.svg';
+    if (lessonId === 'iproyal-get-proxy') return 'iproyal-proxy.svg';
     return '';
-  };
+  }
 
-  function installVisual() {
+  async function mediaForLesson() {
+    const lessonId = document.querySelector('.lesson-link.active')?.dataset?.lesson || '';
+    const lang = document.documentElement.lang || 'ar';
+    if (!lessonId) return '';
+
+    const { current, map } = await releaseVisualMap();
+    const mapped = map?.[lessonId]?.[lang] || map?.[lessonId]?.ar || map?.[lessonId]?.fr || '';
+    const file = mapped || legacyFile(lessonId, lang);
+    if (!file) return '';
+
+    if (current?.mode === 'versioned' && current.assetBase) {
+      const base = `./${String(current.assetBase).replace(/^\.\//, '').replace(/\/?$/, '/')}`;
+      return `${base}${encodeURI(file)}`;
+    }
+    return `./media/${encodeURI(file)}`;
+  }
+
+  async function installVisual() {
     const grid = document.querySelector('.visual-grid');
     if (!grid) return;
-    const src = mediaForLesson();
+    const src = await mediaForLesson();
     if (!src) return;
 
     const current = grid.querySelector('.guideflow-course-visual');
@@ -29,7 +75,7 @@
     const frame = document.createElement('figure');
     frame.className = 'guideflow-course-visual';
     frame.dataset.src = src;
-    frame.innerHTML = `<img src="${src}?v=20260916-1" alt="GuideFlow course visual" loading="eager"><figcaption>${document.documentElement.lang === 'fr' ? 'Repère visuel utilisé dans cette leçon.' : 'الصورة التعليمية المعتمدة في هذا الدرس.'}</figcaption>`;
+    frame.innerHTML = `<img src="${src}" alt="GuideFlow course visual" loading="eager"><figcaption>${document.documentElement.lang === 'fr' ? 'Repère visuel utilisé dans cette leçon.' : 'الصورة التعليمية المعتمدة في هذا الدرس.'}</figcaption>`;
 
     if (oldVisual) oldVisual.replaceWith(frame);
     else grid.prepend(frame);
@@ -46,8 +92,8 @@
 
   const root = document.getElementById('app');
   if (!root) return;
-  const observer = new MutationObserver(() => requestAnimationFrame(installVisual));
+  const observer = new MutationObserver(() => requestAnimationFrame(() => installVisual()));
   observer.observe(root, { childList: true, subtree: true });
-  window.addEventListener('hashchange', () => requestAnimationFrame(installVisual));
-  requestAnimationFrame(installVisual);
+  window.addEventListener('hashchange', () => requestAnimationFrame(() => installVisual()));
+  requestAnimationFrame(() => installVisual());
 })();
