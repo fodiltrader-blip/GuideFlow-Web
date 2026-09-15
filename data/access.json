@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "entries": [
     {
       "id": "trainee-demo-01",
@@ -18,6 +18,23 @@
       "language": "ar",
       "createdAt": "2026-09-15T21:51:53.280Z",
       "expiresAt": "2026-09-30T23:59:59.999Z"
+    },
+    {
+      "id": "trainee-mu396cwa-lcgwfw",
+      "tokenHash": "bc55739d162655201020c8db8f85213acbd933952694db58823604fd8d68b86c",
+      "active": true,
+      "mode": "live",
+      "liveBundle": "course-live.json",
+      "wrappedKey": {
+        "alg": "AES-GCM-256",
+        "nonce": "e3tnrvYQPwEf1y9u",
+        "ciphertext": "1ovx5royevPuvl-IJZ2Sv2E4cwcG24icGX9oux1tbh8AErtKt8WPkefxxOMXmV3zrsA7fI2ToZZyL9A",
+        "kdf": "SHA-256(token)"
+      },
+      "label": "يلا",
+      "language": "ar",
+      "createdAt": "2026-09-15T22:38:11.917Z",
+      "expiresAt": null
     }
   ]
 }
