@@ -4,10 +4,11 @@
     {
       "id": "trainee-demo-01",
       "tokenHash": "f7176b17142e5e3d45a3e6ad1daeda04dc2ae614e24f3d4cb78ff4403f7ec0be",
-      "active": true,
+      "active": false,
       "bundle": "bundle-v1.json",
       "label": "Trainee access",
-      "language": "ar"
+      "language": "ar",
+      "revokedAt": "2026-09-15T22:40:03.777Z"
     },
     {
       "id": "trainee-mu37irpd-39xmsg",
