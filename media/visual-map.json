@@ -1,0 +1,14 @@
+{
+  "adspower-interface": {
+    "ar": "adspower-ar.svg",
+    "fr": "adspower-fr.svg"
+  },
+  "iproyal-intro": {
+    "ar": "iproyal-intro.svg",
+    "fr": "iproyal-intro.svg"
+  },
+  "iproyal-get-proxy": {
+    "ar": "iproyal-proxy.svg",
+    "fr": "iproyal-proxy.svg"
+  }
+}
