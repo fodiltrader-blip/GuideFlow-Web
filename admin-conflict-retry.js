@@ -79,31 +79,52 @@
     return data;
   }
 
-  window.fetch = async function guideFlowAdminFetch(input, init = {}) {
-    const url = requestUrl(input);
-    const method = requestMethod(input, init);
-
-    if (method !== 'PUT' || !CONTENTS_URL.test(url) || !init?.body) {
-      return originalFetch(input, init);
-    }
-
-    let body;
+  function parseAccessBody(body) {
     try {
-      body = JSON.parse(init.body);
+      return JSON.parse(decodeBase64Utf8(body?.content || ''));
     } catch {
-      return originalFetch(input, init);
+      return null;
+    }
+  }
+
+  async function waitForPagesAccessSync(body) {
+    const expected = parseAccessBody(body);
+    if (!Array.isArray(expected?.entries)) return;
+
+    const expectedCanonical = JSON.stringify(expected);
+    const publicUrl = new URL('./data/access.json', location.href);
+    const deadline = Date.now() + 120000;
+
+    while (Date.now() < deadline) {
+      try {
+        publicUrl.searchParams.set('_gf_ready', `${Date.now()}-${Math.random()}`);
+        const response = await originalFetch(publicUrl.href, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        });
+        if (response.ok) {
+          const current = await response.json();
+          if (JSON.stringify(current) === expectedCanonical) return;
+        }
+      } catch {
+        // GitHub Pages may still be deploying the new commit.
+      }
+      await wait(1800);
     }
 
+    console.warn('GuideFlow: access registry write succeeded, but GitHub Pages is still propagating it.');
+  }
+
+  async function sendWithRetry(input, init, url, body) {
     let response = await originalFetch(input, init);
     if (response.ok || !body?.sha) return response;
 
     let message = await readErrorMessage(response);
     if (!isShaConflict(response, message)) return response;
 
-    // GitHub's Contents API uses optimistic locking with the blob SHA. When a
-    // previous write has just changed the file, refresh the current SHA and
-    // safely retry. access.json is merged by entry id so a retry cannot erase
-    // another access record that arrived between the read and the write.
     for (let attempt = 0; attempt < 7; attempt += 1) {
       try {
         await wait(220 * (attempt + 1));
@@ -126,6 +147,30 @@
       } catch (error) {
         console.warn('GuideFlow GitHub write retry:', error);
       }
+    }
+
+    return response;
+  }
+
+  window.fetch = async function guideFlowAdminFetch(input, init = {}) {
+    const url = requestUrl(input);
+    const method = requestMethod(input, init);
+
+    if (method !== 'PUT' || !CONTENTS_URL.test(url) || !init?.body) {
+      return originalFetch(input, init);
+    }
+
+    let body;
+    try {
+      body = JSON.parse(init.body);
+    } catch {
+      return originalFetch(input, init);
+    }
+
+    const response = await sendWithRetry(input, init, url, body);
+
+    if (response.ok && /\/GuideFlow-Web\/contents\/data\/access\.json(?:\?|$)/.test(url)) {
+      await waitForPagesAccessSync(body);
     }
 
     return response;
