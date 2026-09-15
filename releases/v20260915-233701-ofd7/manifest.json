@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "version": "v20260915-233701-ofd7",
+  "generatedAt": "2026-09-15T23:37:01.415Z",
+  "publishedAt": "2026-09-15T23:37:01.440Z",
+  "bundle": "course.json",
+  "assetBase": "assets/",
+  "assets": [
+    "adspower-ar.svg",
+    "adspower-fr.svg",
+    "iproyal-intro.svg",
+    "iproyal-proxy.svg"
+  ],
+  "visualMap": "assets/visual-map.json"
+}

@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "mode": "versioned",
-  "version": "v20260915-232408-iqmo",
-  "bundle": "releases/v20260915-232408-iqmo/course.json",
-  "assetBase": "releases/v20260915-232408-iqmo/assets/",
-  "manifest": "releases/v20260915-232408-iqmo/manifest.json",
-  "generatedAt": "2026-09-15T23:24:08.132Z",
-  "publishedAt": "2026-09-15T23:24:08.143Z"
+  "version": "v20260915-233701-ofd7",
+  "bundle": "releases/v20260915-233701-ofd7/course.json",
+  "assetBase": "releases/v20260915-233701-ofd7/assets/",
+  "manifest": "releases/v20260915-233701-ofd7/manifest.json",
+  "generatedAt": "2026-09-15T23:37:01.415Z",
+  "publishedAt": "2026-09-15T23:37:01.440Z"
 }
