@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "version": "v20260915-232408-iqmo",
+  "generatedAt": "2026-09-15T23:24:08.132Z",
+  "publishedAt": "2026-09-15T23:24:08.143Z",
+  "bundle": "course.json",
+  "assetBase": "assets/",
+  "assets": [
+    "adspower-ar.svg",
+    "adspower-fr.svg",
+    "iproyal-intro.svg",
+    "iproyal-proxy.svg"
+  ],
+  "visualMap": "assets/visual-map.json"
+}

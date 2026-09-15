@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "mode": "versioned",
-  "version": "bootstrap-20260916",
-  "bundle": "data/course-live.json",
-  "assetBase": "media/",
-  "manifest": null,
-  "generatedAt": "2026-09-15T22:44:50.274Z",
-  "bootstrap": true
+  "version": "v20260915-232408-iqmo",
+  "bundle": "releases/v20260915-232408-iqmo/course.json",
+  "assetBase": "releases/v20260915-232408-iqmo/assets/",
+  "manifest": "releases/v20260915-232408-iqmo/manifest.json",
+  "generatedAt": "2026-09-15T23:24:08.132Z",
+  "publishedAt": "2026-09-15T23:24:08.143Z"
 }
