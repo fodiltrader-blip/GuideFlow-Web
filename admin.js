@@ -4,9 +4,12 @@ const OWNER = 'fodiltrader-blip';
 const SOURCE_REPO = 'GuideFlow';
 const WEB_REPO = 'GuideFlow-Web';
 const BRANCH = 'main';
+const LIVE_BUNDLE = 'course-live.json';
+const PRIVATE_KEY_PATH = 'config/course-key.json';
 
 let githubToken = '';
 let accessState = null;
+let coursePreview = null;
 let busy = false;
 let lastIssued = null;
 
@@ -25,6 +28,12 @@ function bytesToBase64Url(bytes) {
   let binary = '';
   bytes.forEach(byte => { binary += String.fromCharCode(byte); });
   return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/g, '');
+}
+
+function base64UrlToBytes(value) {
+  const padded = value + '='.repeat((4 - value.length % 4) % 4);
+  const binary = atob(padded.replaceAll('-', '+').replaceAll('_', '/'));
+  return Uint8Array.from(binary, ch => ch.charCodeAt(0));
 }
 
 function utf8ToBase64(text) {
@@ -55,18 +64,36 @@ async function sha256Hex(text) {
   return [...bytes].map(byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
-async function encryptPayload(payload, token) {
-  const keyBytes = await sha256Bytes(token);
+async function encryptBytes(plaintextBytes, keyBytes) {
   const key = await crypto.subtle.importKey('raw', keyBytes, 'AES-GCM', false, ['encrypt']);
   const nonce = new Uint8Array(12);
   crypto.getRandomValues(nonce);
-  const plaintext = new TextEncoder().encode(JSON.stringify(payload));
-  const ciphertext = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce }, key, plaintext));
+  const ciphertext = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce }, key, plaintextBytes));
   return {
     alg: 'AES-GCM-256',
-    kdf: 'SHA-256(token)',
     nonce: bytesToBase64Url(nonce),
     ciphertext: bytesToBase64Url(ciphertext)
+  };
+}
+
+async function encryptPayloadWithCourseKey(payload, courseKeyText) {
+  const encrypted = await encryptBytes(
+    new TextEncoder().encode(JSON.stringify(payload)),
+    base64UrlToBytes(courseKeyText)
+  );
+  return {
+    ...encrypted,
+    keyMode: 'private-course-key-v1',
+    generatedAt: payload.generatedAt
+  };
+}
+
+async function wrapCourseKey(courseKeyText, token) {
+  const tokenKey = await sha256Bytes(token);
+  const encrypted = await encryptBytes(new TextEncoder().encode(courseKeyText), tokenKey);
+  return {
+    ...encrypted,
+    kdf: 'SHA-256(token)'
   };
 }
 
@@ -85,8 +112,9 @@ async function api(path, options = {}) {
   let data = null;
   try { data = text ? JSON.parse(text) : null; } catch { data = text; }
   if (!response.ok) {
-    const message = data?.message || `GitHub API: ${response.status}`;
-    throw new Error(message);
+    const error = new Error(data?.message || `GitHub API: ${response.status}`);
+    error.status = response.status;
+    throw error;
   }
   return data;
 }
@@ -131,6 +159,15 @@ async function readJson(repo, path) {
   return { ...file, json: JSON.parse(file.text) };
 }
 
+async function readJsonOrNull(repo, path) {
+  try {
+    return await readJson(repo, path);
+  } catch (error) {
+    if (error.status === 404) return null;
+    throw error;
+  }
+}
+
 async function buildLanguage(lang) {
   const coursesFile = await readJson(SOURCE_REPO, `content/${lang}/courses.json`);
   const modules = [];
@@ -158,10 +195,44 @@ async function buildLanguage(lang) {
 async function buildPayload() {
   const [ar, fr] = await Promise.all([buildLanguage('ar'), buildLanguage('fr')]);
   return {
-    version: 1,
+    version: 2,
     generatedAt: new Date().toISOString(),
     languages: { ar, fr }
   };
+}
+
+async function getOrCreateCourseKey() {
+  const existing = await readJsonOrNull(SOURCE_REPO, PRIVATE_KEY_PATH);
+  if (existing?.json?.key) return existing.json.key;
+
+  const key = randomToken(32);
+  const config = {
+    version: 1,
+    algorithm: 'AES-GCM-256',
+    createdAt: new Date().toISOString(),
+    key
+  };
+  await putFile(
+    SOURCE_REPO,
+    PRIVATE_KEY_PATH,
+    `${JSON.stringify(config, null, 2)}\n`,
+    'Create GuideFlow private live course key'
+  );
+  return key;
+}
+
+async function publishLivePayload(payload) {
+  const courseKey = await getOrCreateCourseKey();
+  const encrypted = await encryptPayloadWithCourseKey(payload, courseKey);
+  const existing = await readJsonOrNull(WEB_REPO, `data/${LIVE_BUNDLE}`);
+  await putFile(
+    WEB_REPO,
+    `data/${LIVE_BUNDLE}`,
+    `${JSON.stringify(encrypted, null, 2)}\n`,
+    `Publish GuideFlow course update ${payload.generatedAt}`,
+    existing?.sha || null
+  );
+  return courseKey;
 }
 
 function setStatus(message, type = 'info') {
@@ -185,11 +256,51 @@ function entryState(entry) {
   return { text: 'نشط', cls: 'on' };
 }
 
-function formatDate(value) {
+function formatDate(value, withTime = false) {
   if (!value) return '—';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat('ar-DZ', { dateStyle: 'medium' }).format(date);
+  return new Intl.DateTimeFormat('ar-DZ', withTime ? { dateStyle: 'medium', timeStyle: 'short' } : { dateStyle: 'medium' }).format(date);
+}
+
+function lessonCount(payload, lang = 'ar') {
+  return (payload?.languages?.[lang]?.modules || []).reduce((total, module) => total + (module.lessons || []).length, 0);
+}
+
+function coursePreviewHtml() {
+  if (!coursePreview) return '<p class="empty-preview">لم يتم تحميل محتوى الكورس بعد.</p>';
+  const ar = coursePreview.languages.ar;
+  const fr = coursePreview.languages.fr;
+  return `
+    <div class="course-meta">
+      <div><span>آخر قراءة من المصدر</span><strong>${formatDate(coursePreview.generatedAt, true)}</strong></div>
+      <div><span>الدروس</span><strong>${lessonCount(coursePreview, 'ar')}</strong></div>
+      <div><span>اللغات</span><strong>AR + FR</strong></div>
+      <button class="primary-btn" id="publishCourseBtn">تحديث ونشر الكورس</button>
+    </div>
+    <div class="course-preview-grid">
+      ${previewLanguage(ar, 'العربية', 'AR')}
+      ${previewLanguage(fr, 'Français', 'FR')}
+    </div>`;
+}
+
+function previewLanguage(content, label, code) {
+  const modules = (content?.modules || []).map(module => `
+    <div class="preview-module">
+      <div class="preview-module-head"><span>${escapeHtml(module.number)}</span><strong>${escapeHtml(module.title)}</strong></div>
+      <div class="preview-lessons">
+        ${(module.lessons || []).map(lesson => `
+          <article>
+            <span class="preview-lesson-no">${escapeHtml(lesson.lessonNumber || '')}</span>
+            <div><small>${escapeHtml(lesson.tool || '')}</small><b>${escapeHtml(lesson.title)}</b><p>${escapeHtml(lesson.summary || '')}</p></div>
+          </article>`).join('')}
+      </div>
+    </div>`).join('');
+  return `
+    <section class="preview-language">
+      <div class="preview-language-title"><div><span class="lang-pill">${code}</span><strong>${escapeHtml(label)}</strong></div><small>${escapeHtml(content?.courseTitle || '')}</small></div>
+      ${modules}
+    </section>`;
 }
 
 function render() {
@@ -203,7 +314,8 @@ function render() {
       <aside class="admin-side">
         <div class="admin-brand"><span>G</span><div><b>GuideFlow</b><small>Admin Studio</small></div></div>
         <nav>
-          <a class="active" href="#create">إنشاء رابط</a>
+          <a href="#course">محتوى الكورس</a>
+          <a href="#create">إنشاء رابط</a>
           <a href="#links">الروابط</a>
           <a href="./" target="_blank" rel="noopener">فتح GuideFlow ↗</a>
         </nav>
@@ -212,19 +324,31 @@ function render() {
       </aside>
       <main class="admin-main">
         <header class="admin-top">
-          <div><span>GUIDEFLOW</span><h1>إدارة الوصول</h1></div>
-          <button class="secondary-btn" id="refreshBtn">تحديث</button>
+          <div><span>GUIDEFLOW</span><h1>إدارة الكورس والوصول</h1></div>
+          <div class="admin-actions">
+            <button class="secondary-btn" id="refreshBtn">↻ تحديث البيانات</button>
+            <button class="primary-btn" id="publishTopBtn">نشر تحديث الكورس</button>
+          </div>
         </header>
 
+        <div id="statusBox" class="status-box" hidden></div>
+
+        <section class="course-panel" id="course">
+          <div class="section-title">
+            <div><span class="kicker">COURSE CONTENT</span><h2>محتوى الكورس</h2><p class="section-subtitle">هذه معاينة مباشرة من مستودع GuideFlow الخاص. زر النشر يحدّث النسخة المشفّرة التي يقرأها العملاء.</p></div>
+            <span class="count">${lessonCount(coursePreview, 'ar')}</span>
+          </div>
+          ${coursePreviewHtml()}
+        </section>
+
         <section class="create-panel" id="create">
-          <div class="panel-head"><div><span class="kicker">رابط جديد</span><h2>إنشاء وصول لمتدرّب</h2><p>يتم جلب أحدث محتوى من المستودع الخاص، ثم تشفير نسخة مستقلة لهذا الرابط.</p></div><div class="shield">⌁</div></div>
+          <div class="panel-head"><div><span class="kicker">رابط جديد</span><h2>إنشاء وصول لمتدرّب</h2><p>الرابط الجديد يستخدم نسخة الكورس الحية المشفّرة؛ عندما تنشر تحديثًا، يستطيع العميل جلبه من زر «تحديث» دون إنشاء رابط جديد.</p></div><div class="shield">⌁</div></div>
           <div class="form-grid">
             <label><span>اسم / وصف المتدرّب</span><input id="labelInput" maxlength="80" placeholder="مثال: Ahmed — Formation 01"></label>
             <label><span>اللغة الافتراضية</span><select id="languageInput"><option value="ar">العربية</option><option value="fr">Français</option></select></label>
             <label><span>تاريخ الانتهاء <em>اختياري</em></span><input id="expiryInput" type="date"></label>
           </div>
           <button class="primary-btn" id="createBtn">إنشاء الرابط المشفّر</button>
-          <div id="statusBox" class="status-box" hidden></div>
           ${lastIssued ? issuedCard(lastIssued) : ''}
         </section>
 
@@ -232,17 +356,19 @@ function render() {
           <div class="section-title"><div><span class="kicker">ACCESS</span><h2>الروابط الحالية</h2></div><span class="count">${entries.length}</span></div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>المتدرّب</th><th>اللغة</th><th>تاريخ الإنشاء</th><th>الانتهاء</th><th>الحالة</th><th></th></tr></thead>
-              <tbody>${entries.length ? entries.map(entryRow).join('') : '<tr><td colspan="6" class="empty">لا توجد روابط بعد.</td></tr>'}</tbody>
+              <thead><tr><th>المتدرّب</th><th>النوع</th><th>اللغة</th><th>تاريخ الإنشاء</th><th>الانتهاء</th><th>الحالة</th><th></th></tr></thead>
+              <tbody>${entries.length ? entries.map(entryRow).join('') : '<tr><td colspan="7" class="empty">لا توجد روابط بعد.</td></tr>'}</tbody>
             </table>
           </div>
-          <p class="privacy-note">لا يتم تخزين مفتاح الرابط داخل GitHub؛ لذلك لا يمكن استرجاع رابط قديم من هذه اللوحة بعد فقدانه. عند إيقاف رابط، يُعطّل سجله وتُحذف حزمته المشفّرة من النشر العام.</p>
+          <p class="privacy-note">الروابط الجديدة من نوع LIVE وتقرأ أحدث نسخة منشورة عند الضغط على «تحديث». الروابط القديمة من نوع Snapshot تبقى على محتواها الأصلي، لذلك يفضّل استبدالها تدريجيًا بروابط LIVE.</p>
         </section>
       </main>
     </div>`;
 
   $('#createBtn')?.addEventListener('click', createAccess);
-  $('#refreshBtn')?.addEventListener('click', refreshAccess);
+  $('#refreshBtn')?.addEventListener('click', refreshAdminData);
+  $('#publishTopBtn')?.addEventListener('click', publishCourseUpdate);
+  $('#publishCourseBtn')?.addEventListener('click', publishCourseUpdate);
   $('#disconnectBtn')?.addEventListener('click', disconnect);
   document.querySelectorAll('[data-revoke]').forEach(button => button.addEventListener('click', () => revokeAccess(button.dataset.revoke)));
   $('#copyIssued')?.addEventListener('click', copyIssuedLink);
@@ -255,7 +381,7 @@ function renderConnect() {
       <section class="connect-card">
         <div class="connect-brand">G</div>
         <span class="kicker">GUIDEFLOW ADMIN STUDIO</span>
-        <h1>إدارة الروابط من المتصفح</h1>
+        <h1>إدارة الكورس والروابط من المتصفح</h1>
         <p>أدخل Fine-grained GitHub Token للوصول إلى مستودعي GuideFlow وGuideFlow-Web. التوكن لا يُحفظ في Local Storage ولا يُرفع إلى GitHub؛ يبقى في ذاكرة هذه الصفحة فقط حتى تغلقها.</p>
         <label class="token-input"><span>GitHub Fine-grained Token</span><input id="tokenInput" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…"></label>
         <button class="primary-btn wide" id="connectBtn">اتصال آمن بـ GitHub</button>
@@ -270,8 +396,10 @@ function renderConnect() {
 function entryRow(entry) {
   const state = entryState(entry);
   const canRevoke = entry.active;
+  const mode = entry.mode === 'live' ? '<span class="mode-pill live">LIVE</span>' : '<span class="mode-pill legacy">Snapshot</span>';
   return `<tr>
     <td><strong>${escapeHtml(entry.label || entry.id)}</strong><small>${escapeHtml(entry.id)}</small></td>
+    <td>${mode}</td>
     <td><span class="lang-pill">${entry.language === 'fr' ? 'FR' : 'AR'}</span></td>
     <td>${formatDate(entry.createdAt)}</td>
     <td>${formatDate(entry.expiresAt)}</td>
@@ -282,7 +410,7 @@ function entryRow(entry) {
 
 function issuedCard(item) {
   return `<div class="issued-card">
-    <div><span class="kicker">تم إنشاء الرابط</span><h3>${escapeHtml(item.label)}</h3><p>انسخ الرابط الآن واحتفظ به. المفتاح السري موجود في الرابط نفسه ولا يتم تخزينه في GitHub.</p></div>
+    <div><span class="kicker">تم إنشاء الرابط LIVE</span><h3>${escapeHtml(item.label)}</h3><p>انسخ الرابط الآن واحتفظ به. بعد نشر أي تحديث للكورس، يستطيع هذا العميل الضغط على «تحديث» لجلب النسخة الجديدة.</p></div>
     <div class="issued-link"><input value="${escapeHtml(item.link)}" readonly><button id="copyIssued">نسخ</button><button id="openIssued" class="secondary-btn">فتح</button></div>
   </div>`;
 }
@@ -292,35 +420,62 @@ async function connect() {
   if (!token) return setStatus('أدخل GitHub Token.', 'error');
   githubToken = token;
   setBusy(true);
-  setStatus('جاري التحقق من المستودعات والصلاحيات…');
+  setStatus('جاري التحقق من المستودعات وتحميل محتوى الكورس…');
   try {
-    const [access, source] = await Promise.all([
+    const [access, payload] = await Promise.all([
       readJson(WEB_REPO, 'data/access.json'),
-      readJson(SOURCE_REPO, 'content/ar/courses.json')
+      buildPayload()
     ]);
-    if (!source.json?.courses) throw new Error('تعذر قراءة محتوى GuideFlow الخاص.');
     accessState = access;
+    coursePreview = payload;
     setBusy(false);
     render();
   } catch (error) {
     githubToken = '';
     accessState = null;
+    coursePreview = null;
     setBusy(false);
     renderConnect();
     setStatus(`فشل الاتصال: ${error.message}`, 'error');
   }
 }
 
-async function refreshAccess() {
+async function refreshAdminData() {
   if (busy) return;
   setBusy(true);
+  setStatus('جاري تحديث بيانات الإدارة ومحتوى الكورس…');
   try {
-    accessState = await readJson(WEB_REPO, 'data/access.json');
+    const [access, payload] = await Promise.all([
+      readJson(WEB_REPO, 'data/access.json'),
+      buildPayload()
+    ]);
+    accessState = access;
+    coursePreview = payload;
     setBusy(false);
     render();
+    setStatus('تم تحديث البيانات من GitHub.', 'success');
   } catch (error) {
     setBusy(false);
     setStatus(`تعذر التحديث: ${error.message}`, 'error');
+  }
+}
+
+async function publishCourseUpdate() {
+  if (busy) return;
+  setBusy(true);
+  setStatus('1/3 — جلب أحدث محتوى من GuideFlow الخاص…');
+  try {
+    const payload = await buildPayload();
+    coursePreview = payload;
+    setStatus('2/3 — تشفير نسخة الكورس الحية…');
+    await publishLivePayload(payload);
+    setStatus('3/3 — تم إرسال النسخة الجديدة إلى GuideFlow-Web. GitHub Pages سيكمل النشر تلقائيًا.');
+    setBusy(false);
+    render();
+    setStatus('تم نشر تحديث الكورس. يستطيع عملاء LIVE الضغط على «تحديث» لجلبه بعد اكتمال نشر GitHub Pages.', 'success');
+  } catch (error) {
+    setBusy(false);
+    setStatus(`فشل نشر التحديث: ${error.message}`, 'error');
   }
 }
 
@@ -332,51 +487,46 @@ async function createAccess() {
   if (!label) return setStatus('اكتب اسمًا أو وصفًا للمتدرّب.', 'error');
 
   setBusy(true);
-  setStatus('1/4 — جلب أحدث محتوى من GuideFlow الخاص…');
-  let bundlePath = null;
   try {
+    setStatus('1/4 — جلب أحدث محتوى من GuideFlow الخاص…');
     const payload = await buildPayload();
-    setStatus('2/4 — إنشاء مفتاح وتشفير نسخة المتدرّب…');
+    coursePreview = payload;
+
+    setStatus('2/4 — تحديث النسخة الحية المشفّرة…');
+    const courseKey = await publishLivePayload(payload);
+
+    setStatus('3/4 — إنشاء مفتاح وصول خاص بالمتدرّب…');
     const token = randomToken(32);
     const tokenHash = await sha256Hex(token);
+    const wrappedKey = await wrapCourseKey(courseKey, token);
     const id = `trainee-${Date.now().toString(36)}-${randomToken(4).toLowerCase()}`;
-    const bundleName = `bundle-${id}.json`;
-    bundlePath = `data/${bundleName}`;
-    const encrypted = await encryptPayload(payload, token);
+    const expiresAt = expiry ? new Date(`${expiry}T23:59:59.999Z`).toISOString() : null;
 
-    setStatus('3/4 — رفع الحزمة المشفّرة…');
-    await putFile(WEB_REPO, bundlePath, `${JSON.stringify(encrypted, null, 2)}\n`, `Create encrypted access bundle for ${id}`);
-
-    setStatus('4/4 — تحديث سجل الوصول…');
+    setStatus('4/4 — تسجيل الوصول في GuideFlow-Web…');
     const latest = await readJson(WEB_REPO, 'data/access.json');
     const entries = Array.isArray(latest.json.entries) ? latest.json.entries : [];
-    const expiresAt = expiry ? new Date(`${expiry}T23:59:59.999Z`).toISOString() : null;
     entries.push({
       id,
       tokenHash,
       active: true,
-      bundle: bundleName,
+      mode: 'live',
+      liveBundle: LIVE_BUNDLE,
+      wrappedKey,
       label,
       language,
       createdAt: new Date().toISOString(),
       expiresAt
     });
-    const nextAccess = { ...latest.json, version: Math.max(1, Number(latest.json.version || 1)), entries };
-    await putFile(WEB_REPO, 'data/access.json', `${JSON.stringify(nextAccess, null, 2)}\n`, `Grant GuideFlow access to ${id}`, latest.sha);
+    const nextAccess = { ...latest.json, version: Math.max(2, Number(latest.json.version || 1)), entries };
+    await putFile(WEB_REPO, 'data/access.json', `${JSON.stringify(nextAccess, null, 2)}\n`, `Grant live GuideFlow access to ${id}`, latest.sha);
 
     const base = location.href.split('admin.html')[0];
     lastIssued = { id, label, token, link: `${base}#/access/${encodeURIComponent(token)}` };
     accessState = { ...latest, json: nextAccess };
     setBusy(false);
     render();
-    setStatus('تم إنشاء الرابط ونشر الحزمة المشفّرة بنجاح.', 'success');
+    setStatus('تم إنشاء رابط LIVE بنجاح. بعد نشر تحديثات الكورس، يستطيع العميل جلبها من زر «تحديث».', 'success');
   } catch (error) {
-    if (bundlePath) {
-      try {
-        const orphan = await getFile(WEB_REPO, bundlePath);
-        await deleteFile(WEB_REPO, bundlePath, orphan.sha, 'Remove incomplete access bundle');
-      } catch { /* best-effort cleanup */ }
-    }
     setBusy(false);
     setStatus(`فشل إنشاء الرابط: ${error.message}`, 'error');
   }
@@ -398,17 +548,19 @@ async function revokeAccess(id) {
     target.revokedAt = new Date().toISOString();
     await putFile(WEB_REPO, 'data/access.json', `${JSON.stringify(latest.json, null, 2)}\n`, `Revoke GuideFlow access ${id}`, latest.sha);
 
-    try {
-      const bundleFile = await getFile(WEB_REPO, `data/${target.bundle}`);
-      await deleteFile(WEB_REPO, `data/${target.bundle}`, bundleFile.sha, `Delete revoked GuideFlow bundle ${id}`);
-    } catch (error) {
-      console.warn('Bundle cleanup:', error);
+    if (target.mode !== 'live' && target.bundle) {
+      try {
+        const bundleFile = await getFile(WEB_REPO, `data/${target.bundle}`);
+        await deleteFile(WEB_REPO, `data/${target.bundle}`, bundleFile.sha, `Delete revoked GuideFlow bundle ${id}`);
+      } catch (error) {
+        console.warn('Legacy bundle cleanup:', error);
+      }
     }
 
     accessState = await readJson(WEB_REPO, 'data/access.json');
     setBusy(false);
     render();
-    setStatus('تم إيقاف الرابط وحذف الحزمة المنشورة الخاصة به.', 'success');
+    setStatus('تم إيقاف الرابط.', 'success');
   } catch (error) {
     setBusy(false);
     setStatus(`تعذر إيقاف الرابط: ${error.message}`, 'error');
@@ -431,6 +583,7 @@ async function copyIssuedLink() {
 function disconnect() {
   githubToken = '';
   accessState = null;
+  coursePreview = null;
   lastIssued = null;
   renderConnect();
 }
