@@ -6,7 +6,9 @@ const state = {
   view: 'dashboard',
   lessonId: null,
   accessLabel: '',
-  theme: 'light'
+  theme: 'light',
+  accessEntry: null,
+  refreshMessage: ''
 };
 
 const ui = {
@@ -25,8 +27,8 @@ const ui = {
     objective: 'الهدف',
     responsible: 'المسؤول',
     status: 'الحالة',
-    map: 'خريطة الواجهة',
-    remember: 'الأماكن التي يجب معرفتها',
+    map: 'الشرح',
+    remember: 'النقاط الأساسية',
     result: 'النتيجة المتوقعة',
     stop: 'متى تتوقف؟',
     checklist: 'قائمة التحقق',
@@ -35,7 +37,11 @@ const ui = {
     back: 'العودة للرئيسية',
     private: 'وصول خاص',
     protected: 'المحتوى مشفّر ويُفتح محليًا في المتصفح',
-    noImage: 'الصورة الفعلية ستُضاف بعد تنقيح البيانات الظاهرة فيها.'
+    noImage: 'سيتم اعتماد الصورة التعليمية المنقحة في هذا الجزء.',
+    refresh: 'تحديث',
+    refreshing: 'جاري التحديث…',
+    updated: 'تم تحديث المحتوى',
+    updateFailed: 'تعذر تحديث المحتوى'
   },
   fr: {
     locked: 'Ce guide est accessible via un lien privé.',
@@ -52,8 +58,8 @@ const ui = {
     objective: 'Objectif',
     responsible: 'Responsable',
     status: 'Statut',
-    map: 'Carte de l’interface',
-    remember: 'Zones à connaître',
+    map: 'Explication',
+    remember: 'Points essentiels',
     result: 'Résultat attendu',
     stop: 'Quand s’arrêter ?',
     checklist: 'Checklist',
@@ -62,7 +68,11 @@ const ui = {
     back: 'Retour à l’accueil',
     private: 'Accès privé',
     protected: 'Le contenu est chiffré et déchiffré localement dans le navigateur',
-    noImage: 'La capture réelle sera ajoutée après masquage des données visibles.'
+    noImage: 'La capture pédagogique nettoyée sera utilisée dans cette partie.',
+    refresh: 'Actualiser',
+    refreshing: 'Actualisation…',
+    updated: 'Contenu actualisé',
+    updateFailed: 'Impossible d’actualiser le contenu'
   }
 };
 
@@ -90,20 +100,39 @@ async function sha256Hex(text) {
   return [...bytes].map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-async function decryptBundle(bundle, token) {
-  const keyBytes = await sha256Bytes(token);
+async function decryptWithKeyBytes(bundle, keyBytes) {
   const key = await crypto.subtle.importKey('raw', keyBytes, 'AES-GCM', false, ['decrypt']);
   const plaintext = await crypto.subtle.decrypt(
     { name: 'AES-GCM', iv: bytesFromBase64Url(bundle.nonce) },
     key,
     bytesFromBase64Url(bundle.ciphertext)
   );
-  return JSON.parse(new TextDecoder().decode(plaintext));
+  return new TextDecoder().decode(plaintext);
+}
+
+async function decryptLegacyBundle(bundle, token) {
+  const keyBytes = await sha256Bytes(token);
+  return JSON.parse(await decryptWithKeyBytes(bundle, keyBytes));
+}
+
+async function unwrapCourseKey(wrappedKey, token) {
+  const tokenKey = await sha256Bytes(token);
+  return await decryptWithKeyBytes(wrappedKey, tokenKey);
+}
+
+async function decryptLiveBundle(bundle, courseKeyText) {
+  const keyBytes = bytesFromBase64Url(courseKeyText);
+  return JSON.parse(await decryptWithKeyBytes(bundle, keyBytes));
 }
 
 function getAccessToken() {
   const match = location.hash.match(/^#\/access\/([^/?]+)/);
   return match ? decodeURIComponent(match[1]) : '';
+}
+
+function cacheBust(path) {
+  const separator = path.includes('?') ? '&' : '?';
+  return `${path}${separator}v=${Date.now()}`;
 }
 
 function renderGate(message, invalid = false) {
@@ -122,8 +151,8 @@ function renderGate(message, invalid = false) {
     </main>`;
 }
 
-function renderLoading() {
-  app.innerHTML = `<div class="boot"><div class="brand-mark">G</div><p>GuideFlow</p><span>${escapeHtml(ui.ar.loading)}</span></div>`;
+function renderLoading(message = ui.ar.loading) {
+  app.innerHTML = `<div class="boot"><div class="brand-mark">G</div><p>GuideFlow</p><span>${escapeHtml(message)}</span></div>`;
 }
 
 function currentContent() {
@@ -227,9 +256,25 @@ function interfaceMock(lesson, t) {
     </div>`;
 }
 
+function conceptPanel(lesson) {
+  const labels = (lesson.zones || []).slice(0, 3).map(zone => `
+    <div class="concept-step">
+      <span>${escapeHtml(zone.number)}</span>
+      <div><small>${escapeHtml(zone.key)}</small><strong>${escapeHtml(zone.title)}</strong></div>
+    </div>`).join('');
+  return `
+    <div class="concept-panel">
+      <span class="concept-tool">${escapeHtml(lesson.tool || 'GuideFlow')}</span>
+      <h3>${escapeHtml(lesson.title)}</h3>
+      <p>${escapeHtml(lesson.summary)}</p>
+      <div class="concept-steps">${labels}</div>
+    </div>`;
+}
+
 function lessonPage(content, t) {
   const lesson = findLesson(state.lessonId);
   if (!lesson) return '';
+  const visual = lesson.id === 'adspower-interface' ? interfaceMock(lesson, t) : conceptPanel(lesson);
   return `
     <button class="back-btn" id="backBtn">← ${escapeHtml(t.back)}</button>
     <section class="lesson-intro">
@@ -241,8 +286,8 @@ function lessonPage(content, t) {
     <section class="visual-card">
       <div class="visual-title"><div><span class="eyebrow dark-eye">${escapeHtml(t.map)}</span><h2>${escapeHtml(t.remember)}</h2></div></div>
       <div class="visual-grid">
-        ${interfaceMock(lesson, t)}
-        <div class="zone-list">${(lesson.zones || []).map((zone, index) => `<article class="zone z${index + 1}"><span>${zone.number}</span><div><small>${escapeHtml(zone.key)}</small><h3>${escapeHtml(zone.title)}</h3><p>${escapeHtml(zone.description)}</p></div></article>`).join('')}</div>
+        ${visual}
+        <div class="zone-list">${(lesson.zones || []).map((zone, index) => `<article class="zone z${(index % 3) + 1}"><span>${escapeHtml(zone.number)}</span><div><small>${escapeHtml(zone.key)}</small><h3>${escapeHtml(zone.title)}</h3><p>${escapeHtml(zone.description)}</p></div></article>`).join('')}</div>
       </div>
     </section>
     <div class="rule"><strong>${escapeHtml(lesson.rule)}</strong><span>!</span></div>
@@ -267,7 +312,12 @@ function renderApp() {
       <main class="main-area">
         <header class="topbar">
           <div class="crumb"><span>GuideFlow</span><em>/</em><strong>${state.view === 'dashboard' ? escapeHtml(t.home) : escapeHtml(findLesson(state.lessonId)?.title || '')}</strong></div>
-          <div class="top-actions"><button id="langBtn">${state.language === 'ar' ? 'FR' : 'AR'}</button><button id="themeBtn">◐</button></div>
+          <div class="top-actions">
+            ${state.refreshMessage ? `<span class="refresh-state">${escapeHtml(state.refreshMessage)}</span>` : ''}
+            <button id="refreshCourseBtn" class="refresh-btn" title="${escapeHtml(t.refresh)}">↻ <span>${escapeHtml(t.refresh)}</span></button>
+            <button id="langBtn">${state.language === 'ar' ? 'FR' : 'AR'}</button>
+            <button id="themeBtn">◐</button>
+          </div>
         </header>
         <div class="page-wrap">${state.view === 'dashboard' ? dashboard(content, t) : lessonPage(content, t)}</div>
       </main>
@@ -278,6 +328,80 @@ function renderApp() {
   document.getElementById('backBtn')?.addEventListener('click', goHome);
   document.getElementById('langBtn')?.addEventListener('click', () => setLanguage(state.language === 'ar' ? 'fr' : 'ar'));
   document.getElementById('themeBtn')?.addEventListener('click', toggleTheme);
+  document.getElementById('refreshCourseBtn')?.addEventListener('click', refreshCourse);
+}
+
+async function fetchAccess(token) {
+  const access = await fetch(cacheBust('./data/access.json'), { cache: 'no-store' }).then(r => {
+    if (!r.ok) throw new Error('access');
+    return r.json();
+  });
+  const tokenHash = await sha256Hex(token);
+  const entry = access.entries?.find(item => item.tokenHash === tokenHash && item.active === true);
+  if (!entry) throw new Error('invalid-access');
+  return entry;
+}
+
+async function loadPayload(token) {
+  const entry = await fetchAccess(token);
+  let payload;
+
+  if (entry.mode === 'live' && entry.wrappedKey) {
+    const courseKey = await unwrapCourseKey(entry.wrappedKey, token);
+    const liveBundleName = entry.liveBundle || 'course-live.json';
+    const liveBundle = await fetch(cacheBust(`./data/${liveBundleName}`), { cache: 'no-store' }).then(r => {
+      if (!r.ok) throw new Error('live-bundle');
+      return r.json();
+    });
+    payload = await decryptLiveBundle(liveBundle, courseKey);
+  } else {
+    const bundle = await fetch(cacheBust(`./data/${entry.bundle}`), { cache: 'no-store' }).then(r => {
+      if (!r.ok) throw new Error('bundle');
+      return r.json();
+    });
+    payload = await decryptLegacyBundle(bundle, token);
+  }
+
+  return { entry, payload };
+}
+
+async function refreshCourse() {
+  const token = getAccessToken();
+  if (!token) return;
+  const t = ui[state.language];
+  const button = document.getElementById('refreshCourseBtn');
+  if (button) {
+    button.disabled = true;
+    button.innerHTML = `↻ <span>${escapeHtml(t.refreshing)}</span>`;
+  }
+  try {
+    const previousLesson = state.lessonId;
+    const result = await loadPayload(token);
+    state.payload = result.payload;
+    state.accessEntry = result.entry;
+    state.accessLabel = result.entry.label || '';
+    if (!state.payload.languages[state.language]) {
+      state.language = result.entry.language && state.payload.languages[result.entry.language] ? result.entry.language : 'ar';
+    }
+    if (previousLesson && !findLesson(previousLesson)) {
+      state.view = 'dashboard';
+      state.lessonId = null;
+    }
+    state.refreshMessage = ui[state.language].updated;
+    renderApp();
+    setTimeout(() => {
+      state.refreshMessage = '';
+      if (state.payload) renderApp();
+    }, 2200);
+  } catch (error) {
+    console.error(error);
+    state.refreshMessage = t.updateFailed;
+    renderApp();
+    setTimeout(() => {
+      state.refreshMessage = '';
+      if (state.payload) renderApp();
+    }, 2500);
+  }
 }
 
 async function boot() {
@@ -288,23 +412,11 @@ async function boot() {
     return;
   }
   try {
-    const access = await fetch('./data/access.json', { cache: 'no-store' }).then(r => {
-      if (!r.ok) throw new Error('access');
-      return r.json();
-    });
-    const tokenHash = await sha256Hex(token);
-    const entry = access.entries?.find(item => item.tokenHash === tokenHash && item.active === true);
-    if (!entry) {
-      renderGate(ui.ar.invalid, true);
-      return;
-    }
-    const bundle = await fetch(`./data/${entry.bundle}`, { cache: 'no-store' }).then(r => {
-      if (!r.ok) throw new Error('bundle');
-      return r.json();
-    });
-    state.payload = await decryptBundle(bundle, token);
-    state.language = entry.language && state.payload.languages[entry.language] ? entry.language : 'ar';
-    state.accessLabel = entry.label || '';
+    const result = await loadPayload(token);
+    state.payload = result.payload;
+    state.accessEntry = result.entry;
+    state.language = result.entry.language && state.payload.languages[result.entry.language] ? result.entry.language : 'ar';
+    state.accessLabel = result.entry.label || '';
     renderApp();
   } catch (error) {
     console.error(error);
