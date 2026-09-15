@@ -8,6 +8,16 @@
       "bundle": "bundle-v1.json",
       "label": "Trainee access",
       "language": "ar"
+    },
+    {
+      "id": "trainee-mu37irpd-39xmsg",
+      "tokenHash": "c98c9f347f736014f4510d912d3c21b4f5ad434454535eb7d5e00966d5a8ba2b",
+      "active": true,
+      "bundle": "bundle-trainee-mu37irpd-39xmsg.json",
+      "label": "a",
+      "language": "ar",
+      "createdAt": "2026-09-15T21:51:53.280Z",
+      "expiresAt": "2026-09-30T23:59:59.999Z"
     }
   ]
 }
