@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "mode": "versioned",
+  "version": "bootstrap-20260916",
+  "bundle": "data/course-live.json",
+  "assetBase": "media/",
+  "manifest": null,
+  "generatedAt": "2026-09-15T22:44:50.274Z",
+  "bootstrap": true
+}
