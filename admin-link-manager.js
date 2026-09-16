@@ -202,7 +202,7 @@
       stored ? 'تم حفظ الرابط محليًا ويمكن عرضه ونسخه لاحقًا من إدارة الروابط.' : 'الرابط صالح، لكن المتصفح منع حفظ نسخة الاسترجاع المحلية.',
       stored ? 'success' : 'error'
     );
-    enhanceRows();
+    await enhanceRows();
   }
 
   function makeUnavailableButton() {
@@ -212,6 +212,7 @@
     button.textContent = 'رابط قديم';
     button.disabled = true;
     button.title = 'أُنشئ هذا الرابط قبل تفعيل سجل الاسترجاع المحلي، ولا يمكن عكس SHA-256 لاستعادته.';
+    button.dataset.gfLinkState = 'unavailable';
     return button;
   }
 
@@ -223,14 +224,25 @@
       const actions = row.querySelector('.row-actions');
       if (!id || !actions) return;
 
-      actions.querySelector('[data-gf-view-link]')?.remove();
       const record = storedRecordForId(id);
+      const expectedState = record?.link ? 'available' : 'unavailable';
+      const existing = actions.querySelector('[data-gf-view-link]');
+      if (existing?.dataset.gfLinkState === expectedState) {
+        if (record?.personName) {
+          const name = row.querySelector('td:nth-child(2) strong');
+          if (name && name.textContent !== record.personName) name.textContent = record.personName;
+        }
+        return;
+      }
+      existing?.remove();
+
       let button;
       if (record?.link) {
         button = document.createElement('button');
         button.type = 'button';
         button.className = 'mini-btn gf-view-link';
         button.textContent = 'عرض الرابط';
+        button.dataset.gfLinkState = 'available';
         button.addEventListener('click', () => openModal({ personName: record.personName || id, link: record.link }));
         const name = row.querySelector('td:nth-child(2) strong');
         if (name && record.personName) name.textContent = record.personName;
