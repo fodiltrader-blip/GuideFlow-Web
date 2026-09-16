@@ -38,8 +38,10 @@
     return btoa(binary);
   }
 
-  function mergeAccessJson(latestContent, intendedContent) {
+  function mergeAccessJson(latestContent, intendedContent, message = '') {
     try {
+      if (/^ACCESS_REPLACE:/i.test(message)) return intendedContent;
+
       const latest = JSON.parse(decodeBase64Utf8(latestContent));
       const intended = JSON.parse(decodeBase64Utf8(intendedContent));
       if (!Array.isArray(latest?.entries) || !Array.isArray(intended?.entries)) return intendedContent;
@@ -67,11 +69,7 @@
 
     const latest = await originalFetch(
       `${url}${separator}ref=${encodeURIComponent(branch || 'main')}&_gf=${Date.now()}-${Math.random()}`,
-      {
-        method: 'GET',
-        headers,
-        cache: 'no-store'
-      }
+      { method: 'GET', headers, cache: 'no-store' }
     );
     if (!latest.ok) throw new Error(`Unable to refresh GitHub file SHA (${latest.status})`);
     const data = await latest.json();
@@ -79,43 +77,27 @@
     return data;
   }
 
-  function parseAccessBody(body) {
-    try {
-      return JSON.parse(decodeBase64Utf8(body?.content || ''));
-    } catch {
-      return null;
-    }
-  }
-
   async function waitForPagesAccessSync(body) {
-    const expected = parseAccessBody(body);
+    let expected;
+    try { expected = JSON.parse(decodeBase64Utf8(body?.content || '')); }
+    catch { return; }
     if (!Array.isArray(expected?.entries)) return;
 
-    const expectedCanonical = JSON.stringify(expected);
     const publicUrl = new URL('./data/access.json', location.href);
-    const deadline = Date.now() + 120000;
-
+    const deadline = Date.now() + 90000;
     while (Date.now() < deadline) {
       try {
         publicUrl.searchParams.set('_gf_ready', `${Date.now()}-${Math.random()}`);
-        const response = await originalFetch(publicUrl.href, {
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache'
-          }
-        });
+        const response = await originalFetch(publicUrl.href, { cache: 'no-store' });
         if (response.ok) {
           const current = await response.json();
-          if (JSON.stringify(current) === expectedCanonical) return;
+          const expectedIds = expected.entries.map(x => `${x.id}:${x.active}`).sort().join('|');
+          const currentIds = (current.entries || []).map(x => `${x.id}:${x.active}`).sort().join('|');
+          if (expectedIds === currentIds) return;
         }
-      } catch {
-        // GitHub Pages may still be deploying the new commit.
-      }
+      } catch {}
       await wait(1800);
     }
-
-    console.warn('GuideFlow: access registry write succeeded, but GitHub Pages is still propagating it.');
   }
 
   async function sendWithRetry(input, init, url, body) {
@@ -132,14 +114,10 @@
         body.sha = latest.sha;
 
         if (/\/data\/access\.json(?:\?|$)/.test(url) && latest.content && body.content) {
-          body.content = mergeAccessJson(latest.content, body.content);
+          body.content = mergeAccessJson(latest.content, body.content, body.message || '');
         }
 
-        response = await originalFetch(input, {
-          ...init,
-          cache: 'no-store',
-          body: JSON.stringify(body)
-        });
+        response = await originalFetch(input, { ...init, cache: 'no-store', body: JSON.stringify(body) });
         if (response.ok) return response;
 
         message = await readErrorMessage(response);
@@ -148,31 +126,24 @@
         console.warn('GuideFlow GitHub write retry:', error);
       }
     }
-
     return response;
   }
 
   window.fetch = async function guideFlowAdminFetch(input, init = {}) {
     const url = requestUrl(input);
     const method = requestMethod(input, init);
-
-    if (method !== 'PUT' || !CONTENTS_URL.test(url) || !init?.body) {
-      return originalFetch(input, init);
-    }
+    if (method !== 'PUT' || !CONTENTS_URL.test(url) || !init?.body) return originalFetch(input, init);
 
     let body;
-    try {
-      body = JSON.parse(init.body);
-    } catch {
-      return originalFetch(input, init);
-    }
+    try { body = JSON.parse(init.body); }
+    catch { return originalFetch(input, init); }
 
     const response = await sendWithRetry(input, init, url, body);
 
     if (response.ok && /\/GuideFlow-Web\/contents\/data\/access\.json(?:\?|$)/.test(url)) {
-      await waitForPagesAccessSync(body);
+      // Do not block Admin Studio while GitHub Pages propagates. The UI updates immediately.
+      waitForPagesAccessSync(body).catch(() => {});
     }
-
     return response;
   };
 })();
