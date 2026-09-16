@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "version": "v20260916-142010-cpvb",
+  "generatedAt": "2026-09-16T14:20:08.795Z",
+  "publishedAt": "2026-09-16T14:20:10.115Z",
+  "bundle": "course.json",
+  "assetBase": "assets/",
+  "assets": [
+    "adspower-ar.svg",
+    "adspower-fr.svg"
+  ],
+  "visualMap": "assets/visual-map.json"
+}

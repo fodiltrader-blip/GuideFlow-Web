@@ -1,0 +1,10 @@
+{
+  "adspower-interface": {
+    "ar": "adspower-ar.svg",
+    "fr": "adspower-fr.svg"
+  },
+  "proxy-iproyal": {
+    "ar": "https://pub-6a3d51e9b5fa4255945d84fee5915dbf.r2.dev/images/iproyal/ar/residential-interface.png",
+    "fr": "https://pub-6a3d51e9b5fa4255945d84fee5915dbf.r2.dev/images/iproyal/fr/residential-interface.png"
+  }
+}
