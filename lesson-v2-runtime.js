@@ -6,7 +6,7 @@
     ar: {
       badge: 'الدرس 02',
       title: 'البروكسي و IPRoyal',
-      lead: 'في هذا الدرس سنفهم أولًا ما هو البروكسي ولماذا نستخدمه، ثم ننتقل بهدوء إلى IPRoyal ونطبّق طريقة سحب البروكسي خطوة بخطوة.',
+      lead: 'نستخدم بروكسيات ثابتة (Sticky IP) للمساعدة على الحفاظ على استقرار وأمان الجلسة وتجنب تغيّر عنوان IP أثناء العمل. في هذا الدرس سنفهم أولًا ما هو البروكسي ولماذا نستخدمه، ثم ننتقل بهدوء إلى IPRoyal ونطبّق طريقة سحب البروكسي خطوة بخطوة.',
       objectiveTitle: 'هدف الدرس',
       objective: 'أن تنهي الصفحة وأنت تفهم الفكرة، وليس فقط تحفظ أماكن الأزرار: ما هو البروكسي، لماذا نحتاجه في بيئة الحساب، وما هي الإعدادات التي نستخدمها داخل IPRoyal.',
       s1: 'ما هو البروكسي؟',
@@ -38,7 +38,7 @@
     fr: {
       badge: 'Leçon 02',
       title: 'Le proxy et IPRoyal',
-      lead: 'Dans cette leçon, nous allons d’abord comprendre ce qu’est un proxy et pourquoi nous l’utilisons, puis passer calmement à IPRoyal pour récupérer un proxy étape par étape.',
+      lead: 'Nous utilisons des proxys stables (Sticky IP) afin de contribuer à la stabilité et à la sécurité de la session et d’éviter les changements d’adresse IP pendant le travail. Dans cette leçon, nous allons d’abord comprendre ce qu’est un proxy et pourquoi nous l’utilisons, puis passer calmement à IPRoyal pour récupérer un proxy étape par étape.',
       objectiveTitle: 'Objectif de la leçon',
       objective: 'Terminer cette page en comprenant le principe, pas seulement l’emplacement des boutons : le rôle du proxy, son utilisation dans l’environnement du compte et les réglages utilisés dans IPRoyal.',
       s1: 'Qu’est-ce qu’un proxy ?',
