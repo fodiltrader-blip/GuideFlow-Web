@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "mode": "versioned",
-  "version": "v20260915-233701-ofd7",
-  "bundle": "releases/v20260915-233701-ofd7/course.json",
-  "assetBase": "releases/v20260915-233701-ofd7/assets/",
-  "manifest": "releases/v20260915-233701-ofd7/manifest.json",
-  "generatedAt": "2026-09-15T23:37:01.415Z",
-  "publishedAt": "2026-09-15T23:37:01.440Z"
+  "version": "v20260916-004430-cp5q",
+  "bundle": "releases/v20260916-004430-cp5q/course.json",
+  "assetBase": "releases/v20260916-004430-cp5q/assets/",
+  "manifest": "releases/v20260916-004430-cp5q/manifest.json",
+  "generatedAt": "2026-09-16T00:44:29.645Z",
+  "publishedAt": "2026-09-16T00:44:30.591Z"
 }
