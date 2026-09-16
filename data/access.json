@@ -1,39 +1,4 @@
 {
   "version": 2,
-  "entries": [
-    {
-      "id": "trainee-mu3dnk4p-fupcvq",
-      "tokenHash": "df6937910596e37e31ea34929a76b8284287fdce56328b8fc9a883904ba07377",
-      "active": true,
-      "mode": "live",
-      "liveBundle": "course-live.json",
-      "wrappedKey": {
-        "alg": "AES-GCM-256",
-        "nonce": "pKr-1-adUzBbIDSd",
-        "ciphertext": "McBiSG6M_Lz29FgYLMEUrBnPvu2eISrejEt56lVlT9y20Mh9ybnbZa1cv1HHfl0WqRpmLoUTFEOySDM",
-        "kdf": "SHA-256(token)"
-      },
-      "label": "a",
-      "language": "ar",
-      "createdAt": "2026-09-16T00:43:33.346Z",
-      "expiresAt": null
-    },
-    {
-      "id": "trainee-mu3ymiqh-c5szng",
-      "tokenHash": "a85631843d0620a3942b416f04223458914bceea24854068579b294b10886c5c",
-      "active": true,
-      "mode": "live",
-      "liveBundle": "course-live.json",
-      "wrappedKey": {
-        "alg": "AES-GCM-256",
-        "nonce": "WCYr97v-FXHPHvHC",
-        "ciphertext": "7cglJThZ0fk7LOTP9gPxvdSMSGHcqL03ehApfLAe-dO2Ozvg3l1GxbeXly267-nlbGVi2vFu38nDe7k",
-        "kdf": "SHA-256(token)"
-      },
-      "label": "sgf",
-      "language": "ar",
-      "createdAt": "2026-09-16T10:30:36.808Z",
-      "expiresAt": null
-    }
-  ]
+  "entries": []
 }
