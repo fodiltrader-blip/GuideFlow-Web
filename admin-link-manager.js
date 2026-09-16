@@ -167,8 +167,8 @@
     const input = document.getElementById('labelInput');
     const label = input?.closest('label');
     const title = label?.querySelector('span');
-    if (title) title.textContent = 'اسم الشخص';
-    if (input) input.placeholder = 'مثال: Ahmed Benali';
+    if (title && title.textContent !== 'اسم الشخص') title.textContent = 'اسم الشخص';
+    if (input && input.placeholder !== 'مثال: Ahmed Benali') input.placeholder = 'مثال: Ahmed Benali';
   }
 
   async function processIssuedCard() {
