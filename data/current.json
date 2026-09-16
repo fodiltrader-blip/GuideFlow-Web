@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "mode": "versioned",
-  "version": "v20260916-093754-ul85",
-  "bundle": "releases/v20260916-093754-ul85/course.json",
-  "assetBase": "releases/v20260916-093754-ul85/assets/",
-  "manifest": "releases/v20260916-093754-ul85/manifest.json",
-  "generatedAt": "2026-09-16T09:37:53.279Z",
-  "publishedAt": "2026-09-16T09:37:54.287Z"
+  "version": "v20260916-102841-awk8",
+  "bundle": "releases/v20260916-102841-awk8/course.json",
+  "assetBase": "releases/v20260916-102841-awk8/assets/",
+  "manifest": "releases/v20260916-102841-awk8/manifest.json",
+  "generatedAt": "2026-09-16T10:28:41.108Z",
+  "publishedAt": "2026-09-16T10:28:41.956Z"
 }
