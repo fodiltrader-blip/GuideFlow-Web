@@ -21,6 +21,12 @@
     return new TextDecoder().decode(Uint8Array.from(binary, ch => ch.charCodeAt(0)));
   }
   function normalizeAsset(value = '') { return String(value).replace(/^\.\//, '').replace(/^content\/media\//, '').replace(/^media\//, ''); }
+  function isExternalAsset(value = '') { return /^(?:https?:)?\/\//i.test(String(value)); }
+  function primaryLessonVisual(lesson = {}) {
+    if (lesson.image) return lesson.image;
+    const images = Array.isArray(lesson.images) ? lesson.images : [];
+    return images.find(image => image?.src)?.src || '';
+  }
   function releaseId() {
     const d = new Date(); const p = n => String(n).padStart(2, '0');
     const rnd = Math.random().toString(36).slice(2, 6);
@@ -55,9 +61,10 @@
         for (const ref of course.lessons || []) {
           const lessonRaw = await ghJson(`/repos/${OWNER}/${SOURCE}/contents/content/${lang}/lessons/${encodeURIComponent(ref.id)}.json?ref=${BRANCH}`, authHeaders);
           const lesson = JSON.parse(base64ToUtf8(lessonRaw.content || ''));
-          if (!lesson.image) continue;
+          const visual = primaryLessonVisual(lesson);
+          if (!visual) continue;
           if (!map[lesson.id]) map[lesson.id] = {};
-          map[lesson.id][lang] = normalizeAsset(lesson.image);
+          map[lesson.id][lang] = normalizeAsset(visual);
         }
       }
     }
@@ -136,7 +143,8 @@
     const publishedAt = new Date().toISOString();
     const root = `releases/${version}`;
     const [media, visualMap] = await Promise.all([sourceMedia(authHeaders), sourceVisualMap(authHeaders)]);
-    const assets = [...new Set(Object.values(visualMap).flatMap(entry => Object.values(entry)))];
+    const assets = [...new Set(Object.values(visualMap).flatMap(entry => Object.values(entry)))]
+      .filter(asset => asset && !isExternalAsset(asset));
     const manifest = {
       schemaVersion: 1, version, generatedAt: encrypted.generatedAt || null, publishedAt,
       bundle: 'course.json', assetBase: 'assets/', assets, visualMap: 'assets/visual-map.json'
