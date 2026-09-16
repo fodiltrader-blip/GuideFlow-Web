@@ -86,7 +86,9 @@
   }
 
   const observer = new MutationObserver(() => requestAnimationFrame(apply));
-  observer.observe(app, { childList: true, subtree: true, attributes: true });
+  observer.observe(app, { childList: true, subtree: true });
+  const languageObserver = new MutationObserver(() => requestAnimationFrame(apply));
+  languageObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
   window.addEventListener('hashchange', () => requestAnimationFrame(apply));
   requestAnimationFrame(apply);
 })();
