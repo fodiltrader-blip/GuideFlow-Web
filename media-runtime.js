@@ -75,7 +75,7 @@
     const frame = document.createElement('figure');
     frame.className = 'guideflow-course-visual';
     frame.dataset.src = src;
-    frame.innerHTML = `<img src="${src}" alt="GuideFlow course visual" loading="eager"><figcaption>${document.documentElement.lang === 'fr' ? 'Repère visuel utilisé dans cette leçon.' : 'الصورة التعليمية المعتمدة في هذا الدرس.'}</figcaption>`;
+    frame.innerHTML = `<a href="${src}" target="_blank" rel="noopener" class="guideflow-image-link"><img src="${src}" alt="GuideFlow course visual" loading="eager"></a><figcaption>${document.documentElement.lang === 'fr' ? 'Image complète — cliquez pour l’ouvrir en taille réelle.' : 'الصورة كاملة — اضغط عليها لفتحها بالحجم الأصلي.'}</figcaption>`;
 
     if (oldVisual) oldVisual.replaceWith(frame);
     else grid.prepend(frame);
@@ -83,10 +83,10 @@
 
   const style = document.createElement('style');
   style.textContent = `
-    .guideflow-course-visual{margin:0;min-height:390px;border-radius:18px;overflow:hidden;background:#0d1622;border:1px solid var(--line);display:flex;flex-direction:column;box-shadow:0 18px 44px rgba(14,25,38,.12)}
-    .guideflow-course-visual img{display:block;width:100%;height:auto;max-height:620px;object-fit:contain;background:#0d1622}
-    .guideflow-course-visual figcaption{padding:10px 14px;background:var(--panel);color:var(--muted);font-size:11px;border-top:1px solid var(--line)}
-    @media(max-width:980px){.guideflow-course-visual{min-height:0}.guideflow-course-visual img{max-height:none}}
+    .guideflow-course-visual{margin:0;border-radius:18px;overflow:hidden;background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column;box-shadow:0 18px 44px rgba(14,25,38,.12)}
+    .guideflow-image-link{display:block;width:100%;line-height:0;background:#0d1622;cursor:zoom-in}
+    .guideflow-course-visual img{display:block;width:100%;height:auto;max-width:100%;object-fit:contain;object-position:center;background:#0d1622}
+    .guideflow-course-visual figcaption{padding:10px 14px;background:var(--panel);color:var(--muted);font-size:11px;border-top:1px solid var(--line);line-height:1.6}
   `;
   document.head.appendChild(style);
 
