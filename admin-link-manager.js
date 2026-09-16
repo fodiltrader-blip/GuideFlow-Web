@@ -260,11 +260,14 @@
     document.querySelectorAll('.links-panel tbody tr').forEach(row => {
       const id = rowId(row);
       const actions = row.querySelector('.row-actions');
-      if (!id || !actions || actions.querySelector('[data-gf-link-actions]')) return;
+      if (!id || !actions) return;
+      const saved = registryEntry(id);
+      const existing = actions.querySelector('[data-gf-link-actions]');
+      if (existing && !(saved?.link && existing.querySelector('.gf-link-unavailable'))) return;
+      existing?.remove();
       const holder = document.createElement('span');
       holder.dataset.gfLinkActions = '1';
       holder.className = 'gf-row-link-actions';
-      const saved = registryEntry(id);
       if (saved?.link) {
         holder.innerHTML = `<button class="mini-btn gf-show-link" type="button">عرض الرابط</button><button class="mini-btn gf-copy-link" type="button">نسخ الرابط</button>`;
         holder.querySelector('.gf-show-link')?.addEventListener('click', () => showLinkModal({ name: saved.name, link: saved.link, title: 'رابط الوصول', note: 'هذا الرابط محفوظ في سجل خاص داخل مستودع GuideFlow الخاص.' }));
