@@ -1,22 +1,4 @@
 {
   "version": 2,
-  "entries": [
-    {
-      "id": "trainee-mu46vjh0-nvh1lw",
-      "tokenHash": "147ac0ffe2400f32d0dad1bb06e8b5f435055b41018a253879e28b536516375d",
-      "active": true,
-      "mode": "live",
-      "liveBundle": "course-live.json",
-      "wrappedKey": {
-        "alg": "AES-GCM-256",
-        "nonce": "w6nz9RGXXr0JU4UP",
-        "ciphertext": "lgrLsKepSSsmnLu3LvSLNu6iiyuRFujXDVfArCOpwC5bO6_Q0BQXMkb41_tuYsspkHyePNjerUl01OE",
-        "kdf": "SHA-256(token)"
-      },
-      "label": "sgf",
-      "language": "ar",
-      "createdAt": "2026-09-16T14:21:34.767Z",
-      "expiresAt": null
-    }
-  ]
+  "entries": []
 }
