@@ -4,7 +4,7 @@
     {
       "id": "trainee-mu3dnk4p-fupcvq",
       "tokenHash": "df6937910596e37e31ea34929a76b8284287fdce56328b8fc9a883904ba07377",
-      "active": true,
+      "active": false,
       "mode": "live",
       "liveBundle": "course-live.json",
       "wrappedKey": {
@@ -16,7 +16,8 @@
       "label": "a",
       "language": "ar",
       "createdAt": "2026-09-16T00:43:33.346Z",
-      "expiresAt": null
+      "expiresAt": null,
+      "revokedAt": "2026-09-16T00:58:21.786Z"
     }
   ]
 }
