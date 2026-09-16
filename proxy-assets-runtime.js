@@ -3,15 +3,10 @@
   if (!app) return;
 
   // Cloudflare R2 is the primary image store. Legacy Base64 chunks remain only
-  // as a temporary safety fallback until the three R2 objects are confirmed.
+  // as a temporary safety fallback until all six localized R2 objects are confirmed.
   const media = window.GuideFlowMedia || {};
   const baseUrl = String(media.baseUrl || '').replace(/\/$/, '');
   const configuredAssets = media.assets || {};
-  const r2Assets = {
-    overview: configuredAssets.iproyalOverview || '/images/iproyal/residential-interface.jpg',
-    settings: configuredAssets.iproyalSettings || '/images/iproyal/proxy-settings.jpg',
-    list: configuredAssets.iproyalList || '/images/iproyal/proxy-list.jpg'
-  };
 
   const manifests = {
     overview: ['./proxy-assets/overview-1.b64', './proxy-assets/overview-2.b64'],
@@ -19,6 +14,19 @@
     list: ['./proxy-assets/list.b64']
   };
   const cache = new Map();
+
+  function activeLanguage() {
+    return document.documentElement.lang === 'fr' ? 'fr' : 'ar';
+  }
+
+  function localizedAssets(lang = activeLanguage()) {
+    const selected = configuredAssets?.[lang] || configuredAssets?.ar || configuredAssets || {};
+    return {
+      overview: selected.iproyalOverview || `/images/iproyal/${lang}/residential-interface.png`,
+      settings: selected.iproyalSettings || `/images/iproyal/${lang}/proxy-settings.png`,
+      list: selected.iproyalList || `/images/iproyal/${lang}/proxy-list.png`
+    };
+  }
 
   async function loadDataUrl(key) {
     if (cache.has(key)) return cache.get(key);
@@ -33,14 +41,14 @@
     return url;
   }
 
-  function r2Url(key) {
-    const path = r2Assets[key];
+  function r2Url(key, lang = activeLanguage()) {
+    const path = localizedAssets(lang)[key];
     if (!baseUrl || !path) return '';
     return `${baseUrl}/${String(path).replace(/^\/+/, '')}`;
   }
 
-  function installR2WithFallback(image, key) {
-    const src = r2Url(key);
+  function installR2WithFallback(image, key, lang) {
+    const src = r2Url(key, lang);
     if (!src) return;
 
     image.onerror = async () => {
@@ -58,16 +66,18 @@
   async function apply() {
     if (applying) return;
     const page = document.querySelector('.gf-course-page');
-    if (!page || page.dataset.proxyImagesReady === '1') return;
+    if (!page) return;
+    const lang = activeLanguage();
+    if (page.dataset.proxyImagesReady === lang) return;
     const shots = [...page.querySelectorAll('.gf-full-shot img')];
     if (shots.length < 3) return;
 
     applying = true;
     try {
-      installR2WithFallback(shots[0], 'overview');
-      installR2WithFallback(shots[1], 'settings');
-      installR2WithFallback(shots[2], 'list');
-      page.dataset.proxyImagesReady = '1';
+      installR2WithFallback(shots[0], 'overview', lang);
+      installR2WithFallback(shots[1], 'settings', lang);
+      installR2WithFallback(shots[2], 'list', lang);
+      page.dataset.proxyImagesReady = lang;
     } catch (error) {
       console.error('GuideFlow proxy screenshot loader:', error);
     } finally {
@@ -76,6 +86,7 @@
   }
 
   const observer = new MutationObserver(() => requestAnimationFrame(apply));
-  observer.observe(app, { childList: true, subtree: true });
+  observer.observe(app, { childList: true, subtree: true, attributes: true });
+  window.addEventListener('hashchange', () => requestAnimationFrame(apply));
   requestAnimationFrame(apply);
 })();
