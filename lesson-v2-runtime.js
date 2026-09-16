@@ -73,33 +73,46 @@
     return document.querySelector('.lesson-link.active')?.dataset?.lesson || '';
   }
 
-  async function assetBase() {
-    if (window.GuideFlowRelease?.current?.assetBase) {
-      return `./${String(window.GuideFlowRelease.current.assetBase).replace(/^\.\//, '').replace(/\/?$/, '/')}`;
+  function proxyMedia(lang) {
+    const media = window.GuideFlowMedia || {};
+    const baseUrl = String(media.baseUrl || '').replace(/\/$/, '');
+    const selected = media.assets?.[lang] || media.assets?.ar || {};
+    const defaults = {
+      overview: `/images/iproyal/${lang}/residential-interface.png`,
+      settings: `/images/iproyal/${lang}/proxy-settings.png`,
+      list: `/images/iproyal/${lang}/proxy-list.png`
+    };
+
+    function resolve(value, fallback) {
+      const path = value || fallback;
+      if (/^(?:https?:)?\/\//i.test(path)) return path;
+      if (!baseUrl) return path;
+      return `${baseUrl}/${String(path).replace(/^\/+/, '')}`;
     }
-    try {
-      const response = await fetch(`./data/current.json?v=${Date.now()}`, { cache: 'no-store' });
-      const current = response.ok ? await response.json() : null;
-      if (current?.assetBase) return `./${String(current.assetBase).replace(/^\.\//, '').replace(/\/?$/, '/')}`;
-    } catch {}
-    return './media/';
+
+    return {
+      overview: resolve(selected.iproyalOverview, defaults.overview),
+      settings: resolve(selected.iproyalSettings, defaults.settings),
+      list: resolve(selected.iproyalList, defaults.list)
+    };
   }
 
   function section(title, body) {
     return `<section class="gf-reading-section"><h2>${title}</h2><p>${body}</p></section>`;
   }
 
-  async function renderProxyLesson() {
+  function renderProxyLesson() {
     if (activeLessonId() !== 'proxy-iproyal') return;
     const wrap = document.querySelector('.page-wrap');
-    if (!wrap || wrap.dataset.guideflowV2 === 'proxy-iproyal') return;
-
     const lang = document.documentElement.lang === 'fr' ? 'fr' : 'ar';
+    const renderKey = `proxy-iproyal:${lang}`;
+    if (!wrap || wrap.dataset.guideflowV2 === renderKey) return;
+
     const t = copy[lang];
-    const base = await assetBase();
+    const media = proxyMedia(lang);
     if (activeLessonId() !== 'proxy-iproyal') return;
 
-    wrap.dataset.guideflowV2 = 'proxy-iproyal';
+    wrap.dataset.guideflowV2 = renderKey;
     wrap.innerHTML = `
       <article class="gf-course-page">
         <button class="gf-back" id="gfBackBtn">← ${t.back}</button>
@@ -128,18 +141,18 @@
 
         <section class="gf-step">
           <div class="gf-step-copy"><span>1</span><div><h2>${t.step1}</h2><p>${t.step1p}</p></div></div>
-          <figure class="gf-full-shot"><img src="${base}iproyal-overview-redacted.webp" alt="IPRoyal Residential Proxies" loading="eager"><figcaption>${t.cap1}</figcaption></figure>
+          <figure class="gf-full-shot"><img src="${media.overview}" alt="IPRoyal Residential Proxies" loading="eager"><figcaption>${t.cap1}</figcaption></figure>
         </section>
 
         <section class="gf-step">
           <div class="gf-step-copy"><span>2</span><div><h2>${t.step2}</h2><p>${t.step2p}</p></div></div>
           <div class="gf-settings-list">${t.settings.map(item => `<div>✓ ${item}</div>`).join('')}</div>
-          <figure class="gf-full-shot"><img src="${base}iproyal-settings-redacted.webp" alt="IPRoyal proxy settings" loading="lazy"><figcaption>${t.cap2}</figcaption></figure>
+          <figure class="gf-full-shot"><img src="${media.settings}" alt="IPRoyal proxy settings" loading="lazy"><figcaption>${t.cap2}</figcaption></figure>
         </section>
 
         <section class="gf-step">
           <div class="gf-step-copy"><span>3</span><div><h2>${t.step3}</h2><p>${t.step3p}</p></div></div>
-          <figure class="gf-full-shot"><img src="${base}iproyal-list-redacted.webp" alt="IPRoyal formatted proxy list" loading="lazy"><figcaption>${t.cap3}</figcaption></figure>
+          <figure class="gf-full-shot"><img src="${media.list}" alt="IPRoyal formatted proxy list" loading="lazy"><figcaption>${t.cap3}</figcaption></figure>
         </section>
 
         <section class="gf-result">
@@ -155,6 +168,8 @@
 
   const observer = new MutationObserver(() => requestAnimationFrame(renderProxyLesson));
   observer.observe(app, { childList: true, subtree: true });
+  const languageObserver = new MutationObserver(() => requestAnimationFrame(renderProxyLesson));
+  languageObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
   window.addEventListener('hashchange', () => requestAnimationFrame(renderProxyLesson));
   requestAnimationFrame(renderProxyLesson);
 })();

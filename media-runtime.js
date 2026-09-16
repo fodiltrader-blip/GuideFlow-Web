@@ -45,6 +45,10 @@
     return '';
   }
 
+  function isExternalAsset(value = '') {
+    return /^(?:https?:)?\/\//i.test(String(value));
+  }
+
   async function mediaForLesson() {
     const lessonId = document.querySelector('.lesson-link.active')?.dataset?.lesson || '';
     const lang = document.documentElement.lang || 'ar';
@@ -54,6 +58,7 @@
     const mapped = map?.[lessonId]?.[lang] || map?.[lessonId]?.ar || map?.[lessonId]?.fr || '';
     const file = mapped || legacyFile(lessonId, lang);
     if (!file) return '';
+    if (isExternalAsset(file)) return file;
 
     if (current?.mode === 'versioned' && current.assetBase) {
       const base = `./${String(current.assetBase).replace(/^\.\//, '').replace(/\/?$/, '/')}`;
