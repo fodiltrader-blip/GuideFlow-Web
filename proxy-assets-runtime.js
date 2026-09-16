@@ -2,14 +2,15 @@
   const app = document.getElementById('app');
   if (!app) return;
 
-  // HQ IPRoyal screenshots are served from Cloudflare R2. During the migration,
-  // keep the legacy Base64 assets as a fallback so the live lesson never loses
-  // its screenshots if an R2 object is missing or temporarily unavailable.
-  const R2_BASE = 'https://pub-6a3d51e9b5fa4255945d84fee5915dbf.r2.dev/images/iproyal/';
+  // Cloudflare R2 is the primary image store. Legacy Base64 chunks remain only
+  // as a temporary safety fallback until the three R2 objects are confirmed.
+  const media = window.GuideFlowMedia || {};
+  const baseUrl = String(media.baseUrl || '').replace(/\/$/, '');
+  const configuredAssets = media.assets || {};
   const r2Assets = {
-    overview: 'residential-interface.jpg',
-    settings: 'proxy-settings.jpg',
-    list: 'proxy-list.jpg'
+    overview: configuredAssets.iproyalOverview || '/images/iproyal/residential-interface.jpg',
+    settings: configuredAssets.iproyalSettings || '/images/iproyal/proxy-settings.jpg',
+    list: configuredAssets.iproyalList || '/images/iproyal/proxy-list.jpg'
   };
 
   const manifests = {
@@ -33,8 +34,9 @@
   }
 
   function r2Url(key) {
-    const file = r2Assets[key];
-    return file ? `${R2_BASE}${encodeURIComponent(file)}` : '';
+    const path = r2Assets[key];
+    if (!baseUrl || !path) return '';
+    return `${baseUrl}/${String(path).replace(/^\/+/, '')}`;
   }
 
   function installR2WithFallback(image, key) {
