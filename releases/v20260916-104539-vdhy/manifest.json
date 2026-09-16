@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "version": "v20260916-104539-vdhy",
+  "generatedAt": "2026-09-16T10:45:38.395Z",
+  "publishedAt": "2026-09-16T10:45:39.231Z",
+  "bundle": "course.json",
+  "assetBase": "assets/",
+  "assets": [
+    "adspower-ar.svg",
+    "adspower-fr.svg"
+  ],
+  "visualMap": "assets/visual-map.json"
+}
