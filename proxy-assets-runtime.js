@@ -13,9 +13,9 @@
     if (cache.has(key)) return cache.get(key);
     const files = manifests[key] || [];
     const parts = await Promise.all(files.map(async file => {
-      const response = await fetch(`${file}?v=20260916-1`, { cache: 'force-cache' });
+      const response = await fetch(`${file}?v=20260916-2`, { cache: 'no-store' });
       if (!response.ok) throw new Error(`Proxy asset not found: ${file}`);
-      return (await response.text()).trim();
+      return (await response.text()).replace(/\s+/g, '');
     }));
     const url = `data:image/webp;base64,${parts.join('')}`;
     cache.set(key, url);
