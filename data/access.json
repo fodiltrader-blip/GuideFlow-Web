@@ -1,4 +1,22 @@
 {
   "version": 2,
-  "entries": []
+  "entries": [
+    {
+      "id": "trainee-mu47x5cp-oaid2a",
+      "tokenHash": "6214899f81e057a52254bcd02bc0af495f6d6f65e9b0a43ab08c03387adb5174",
+      "active": true,
+      "mode": "live",
+      "liveBundle": "course-live.json",
+      "wrappedKey": {
+        "alg": "AES-GCM-256",
+        "nonce": "Gz-FQedC4X_PghDj",
+        "ciphertext": "8LQPOk4nLhCDpt9RnDkozszunBcnkXBZeY7hz90i4M2ac-Psqufy3z0xxkhX0JBu50Gf0codeiummhY",
+        "kdf": "SHA-256(token)"
+      },
+      "label": "s",
+      "language": "ar",
+      "createdAt": "2026-09-16T14:50:49.900Z",
+      "expiresAt": null
+    }
+  ]
 }
