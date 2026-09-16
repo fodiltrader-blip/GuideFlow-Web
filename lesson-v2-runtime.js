@@ -92,14 +92,15 @@
   async function renderProxyLesson() {
     if (activeLessonId() !== 'proxy-iproyal') return;
     const wrap = document.querySelector('.page-wrap');
-    if (!wrap || wrap.dataset.guideflowV2 === 'proxy-iproyal') return;
-
     const lang = document.documentElement.lang === 'fr' ? 'fr' : 'ar';
+    const renderKey = `proxy-iproyal:${lang}`;
+    if (!wrap || wrap.dataset.guideflowV2 === renderKey) return;
+
     const t = copy[lang];
     const base = await assetBase();
     if (activeLessonId() !== 'proxy-iproyal') return;
 
-    wrap.dataset.guideflowV2 = 'proxy-iproyal';
+    wrap.dataset.guideflowV2 = renderKey;
     wrap.innerHTML = `
       <article class="gf-course-page">
         <button class="gf-back" id="gfBackBtn">← ${t.back}</button>
@@ -155,6 +156,8 @@
 
   const observer = new MutationObserver(() => requestAnimationFrame(renderProxyLesson));
   observer.observe(app, { childList: true, subtree: true });
+  const languageObserver = new MutationObserver(() => requestAnimationFrame(renderProxyLesson));
+  languageObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
   window.addEventListener('hashchange', () => requestAnimationFrame(renderProxyLesson));
   requestAnimationFrame(renderProxyLesson);
 })();
