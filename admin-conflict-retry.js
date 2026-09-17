@@ -132,6 +132,8 @@
   window.fetch = async function guideFlowAdminFetch(input, init = {}) {
     const url = requestUrl(input);
     const method = requestMethod(input, init);
+    // Agreements use optimistic concurrency: never overwrite a newer draft/publication.
+    if (/\/contents\/(?:config\/purchase-agreements\.json|data\/agreements\/)/.test(url)) return originalFetch(input, init);
     if (method !== 'PUT' || !CONTENTS_URL.test(url) || !init?.body) return originalFetch(input, init);
 
     let body;
