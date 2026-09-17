@@ -1,4 +1,7 @@
+import { createAgreementAdmin } from './admin-agreements.mjs';
+
 const root = document.getElementById('adminApp');
+const agreements = createAgreementAdmin({ readJsonOrNull, putFile });
 
 const OWNER = 'fodiltrader-blip';
 const SOURCE_REPO = 'GuideFlow';
@@ -314,6 +317,7 @@ function issuedCard(item) {
 
 function render() {
   if (!githubToken || !accessState) return renderConnect();
+  agreements.detach();
   const s = stats();
   const entries = filteredEntries();
   const visibleIds = entries.map(entry => entry.id);
@@ -328,6 +332,7 @@ function render() {
           <a href="#course">محتوى الكورس</a>
           <a href="#create">إنشاء رابط</a>
           <a href="#links">إدارة الروابط</a>
+          <a href="#agreements">اتفاقات الشراء</a>
           <a href="./" target="_blank" rel="noopener">فتح GuideFlow ↗</a>
         </nav>
         <div class="token-state"><i></i><div><b>GitHub متصل</b><small>التوكن في ذاكرة الصفحة فقط</small></div></div>
@@ -412,6 +417,7 @@ function render() {
     </div>`;
 
   bindEvents();
+  agreements.mount(document.querySelector('.admin-main'));
 }
 
 function renderConnect() {
@@ -685,6 +691,7 @@ async function copyIssuedLink() {
 }
 
 function disconnect() {
+  agreements.reset();
   githubToken = '';
   accessState = null;
   coursePreview = null;
