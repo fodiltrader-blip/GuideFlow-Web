@@ -1,0 +1,67 @@
+/* GuideFlow Hybrid Premium Admin Theme v1 */
+
+.admin-shell.v2{
+  --gf-admin-bg:#0b1220;
+  --gf-admin-panel:#111b2e;
+  --gf-admin-line:rgba(255,255,255,.08);
+  --gf-admin-text:#f8fafc;
+  --gf-admin-muted:#94a3b8;
+  --gf-admin-accent:#d4af37;
+}
+
+.admin-shell.v2 .admin-main{
+  background:linear-gradient(180deg,#f8fafc 0%,#eef3f9 100%);
+}
+
+.admin-shell.v2 .stats-grid article,
+.admin-shell.v2 .course-panel{
+  border-radius:24px;
+  border-color:#e5eaf2;
+  box-shadow:0 14px 40px rgba(15,23,42,.06);
+  transition:.2s ease;
+}
+
+.admin-shell.v2 .stats-grid article:hover,
+.admin-shell.v2 .course-panel:hover{
+  transform:translateY(-2px);
+  box-shadow:0 18px 45px rgba(15,23,42,.1);
+}
+
+.admin-shell.v2 .stats-grid article strong{
+  letter-spacing:-.03em;
+}
+
+.admin-shell.v2 .course-details,
+.admin-shell.v2 .preview-language,
+.admin-shell.v2 .course-meta>div{
+  border-radius:16px;
+}
+
+.admin-shell.v2 button,
+.admin-shell.v2 .primary-btn,
+.admin-shell.v2 .secondary-btn{
+  border-radius:12px;
+  transition:.2s ease;
+}
+
+.admin-shell.v2 button:hover,
+.admin-shell.v2 .primary-btn:hover,
+.admin-shell.v2 .secondary-btn:hover{
+  transform:translateY(-1px);
+}
+
+.admin-shell.v2 .mode-pill.live{
+  background:#e8f3ff;
+  color:#1d4ed8;
+}
+
+.admin-shell.v2 .status-box{
+  border-radius:18px;
+}
+
+@media(max-width:760px){
+ .admin-shell.v2 .course-panel,
+ .admin-shell.v2 .stats-grid article{
+   border-radius:18px;
+ }
+}
