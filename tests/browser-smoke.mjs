@@ -71,14 +71,20 @@ try {
   const texts = { title: 'اتفاق الدورة العملية', description: 'تعلّم خطوة بخطوة مع مواد تدريبية منظمة.', includes: 'دروس عملية\nتمارين تطبيقية\nجلسة مراجعة', resources: 'دليل عمل PDF\nملفات التمارين\nمصادر تعليمية', refund: 'يمكن طلب الاسترجاع خلال سبعة أيام حسب الشروط المتفق عليها.', paymentMethod: 'تحويل بنكي', paymentInstructions: 'تواصل مع البائع للحصول على تعليمات التحويل.' };
   const french = { title: 'Formation pratique — accord d’achat', description: 'Une formation progressive avec des ressources structurées.', includes: 'Leçons pratiques\nExercices\nSéance de révision', resources: 'Guide PDF\nFichiers d’exercices\nSources pédagogiques', refund: 'Remboursement possible sous sept jours selon les conditions convenues.', paymentMethod: 'Virement bancaire', paymentInstructions: 'Contactez le vendeur pour obtenir les instructions de virement.' };
   for (const [lang, fields] of [['ar', texts], ['fr', french]]) for (const [key, value] of Object.entries(fields)) await page.locator(`[name="${lang}.${key}"]`).fill(value);
-  await page.locator('[name="total"]').fill('100');
-  await page.locator('[name="count"]').fill('2'); await page.locator('[name="count"]').blur();
-  for (const [i, amount] of ['50', '40'].entries()) { await page.locator('[name="amount"]').nth(i).fill(amount); await page.locator('[name="dueDate"]').nth(i).fill(`2027-0${i + 1}-01`); }
+  const wallet = '0x' + 'abc123'.repeat(6) + 'abcd';
+  await page.locator('[name="ar.description"]').fill('البائع: Seller\nالمشتري: Buyer\n' + texts.description);
+  await page.locator('[name="fr.description"]').fill('Vendeur : Seller\nAcheteur : Buyer\n' + french.description);
+  await page.locator('[name="ar.paymentInstructions"]').fill(`عنوان الاستلام:\n${wallet}\n${texts.paymentInstructions}`);
+  await page.locator('[name="fr.paymentInstructions"]').fill(`Adresse de réception :\n${wallet}\n${french.paymentInstructions}`);
+  await page.locator('[name="currency"]').selectOption('EUR');
+  await page.locator('[name="total"]').fill('1500');
+  await page.locator('[name="count"]').fill('3'); await page.locator('[name="count"]').blur();
+  for (const [i, amount] of ['450', '500', '525'].entries()) { await page.locator('[name="amount"]').nth(i).fill(amount); await page.locator('[name="dueDate"]').nth(i).fill(`2027-0${i + 1}-01`); }
   await page.locator('[name="paymentUrl"]').fill('https://example.com/payment');
   await page.locator('#agreementForm [type="submit"]').click();
   await page.waitForFunction(() => document.querySelector('#agreementStatus').textContent.includes('مجموع الدفعات'));
   assert.equal(writes.length, 0);
-  await page.locator('[name="amount"]').nth(1).fill('50');
+  await page.locator('[name="amount"]').nth(1).fill('525');
   failPublication = true;
   await page.locator('#agreementForm [type="submit"]').click();
   await page.waitForFunction(() => document.querySelector('#agreementStatus').textContent.includes('النشر لم يكتمل'));
@@ -94,9 +100,9 @@ try {
   await mkdir(resolve(root, '../artifacts'), { recursive: true });
   await page.screenshot({ path: resolve(root, '../artifacts/admin-agreements.png'), fullPage: true });
   // Other admin renders must preserve unsaved agreement edits.
-  await page.locator('[name="ar.title"]').fill('عنوان معدّل');
+  await page.locator('[name="ar.title"]').fill('اتفاق شراء كورس GuideFlow — نسخة تجريبية');
   await page.locator('#linksSearch').fill('example');
-  assert.equal(await page.locator('[name="ar.title"]').inputValue(), 'عنوان معدّل');
+  assert.equal(await page.locator('[name="ar.title"]').inputValue(), 'اتفاق شراء كورس GuideFlow — نسخة تجريبية');
   await page.locator('#agreementLanguage').selectOption('fr');
   assert.equal(await page.locator('#agreements').getAttribute('dir'), 'ltr');
   await page.locator('#agreementForm [type="submit"]').click();
@@ -105,7 +111,13 @@ try {
   assert.deepEqual(files.get('GuideFlow-Web/data/access.json'), accessBefore);
   const viewer = await context.newPage(); await viewer.goto(link);
   await viewer.locator('.agreement-hero h1').waitFor();
-  assert.equal(await viewer.locator('.agreement-hero h1').textContent(), 'عنوان معدّل');
+  assert.equal(await viewer.locator('.agreement-hero h1').textContent(), 'اتفاق شراء كورس GuideFlow — نسخة تجريبية');
+  assert.equal(await viewer.locator('.agreement-milestone').count(), 3);
+  await viewer.locator('#viewAgreementPayment').click();
+  assert.equal(viewer.url(), link);
+  await viewer.locator('[data-copy-address]').click();
+  assert.equal(await viewer.evaluate(() => navigator.clipboard.readText()), wallet);
+  await viewer.evaluate(() => window.scrollTo(0, 0));
   await viewer.screenshot({ path: resolve(root, '../artifacts/agreement-ar.png'), fullPage: true });
   await viewer.locator('[data-language="fr"]').click();
   assert.equal(await viewer.locator('html').getAttribute('dir'), 'ltr');
@@ -113,6 +125,24 @@ try {
   await viewer.setViewportSize({ width: 390, height: 844 });
   assert.ok(await viewer.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   await viewer.screenshot({ path: resolve(root, '../artifacts/agreement-mobile.png'), fullPage: true });
+  for (const lang of ['ar', 'fr']) {
+    await viewer.locator(`[data-language="${lang}"]`).click();
+    for (const width of [320, 390, 768, 1440]) {
+      await viewer.setViewportSize({ width, height: 900 });
+      assert.ok(await viewer.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${lang} overflow at ${width}`);
+    }
+  }
+  await viewer.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
+  assert.ok(await viewer.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'overflow at enlarged text');
+  await viewer.evaluate(() => { document.documentElement.style.fontSize = ''; });
+  await viewer.emulateMedia({ media: 'print' });
+  assert.equal(await viewer.locator('#printAgreement').isVisible(), false);
+  assert.equal(await viewer.locator('#agreementAddress0').inputValue(), wallet);
+  await viewer.pdf({ path: resolve(root, '../artifacts/agreement-print.pdf'), format: 'A4', printBackground: true });
+  await viewer.emulateMedia({ media: 'screen' });
+  await viewer.locator('[data-language="ar"]').click();
+  await viewer.setViewportSize({ width: 390, height: 844 });
+  await viewer.screenshot({ path: resolve(root, '../artifacts/agreement-mobile-ar.png'), fullPage: true });
   await viewer.goto(link.split('#')[0]); await viewer.locator('.agreement-error').waitFor();
   await viewer.goto(link.replace(/#key=.*/, `#key=${newIdentity().shareKey}`)); await viewer.locator('.agreement-error').waitFor();
   await viewer.goto(`${base}/agreement.html?id=invalid`); await viewer.locator('.agreement-error').waitFor();

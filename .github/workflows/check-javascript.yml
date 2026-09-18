@@ -15,5 +15,5 @@ jobs:
           node-version: '24'
       - name: Check JavaScript syntax
         run: find . -not -path './.git/*' \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -n1 node --check
-      - name: Test purchase agreements
-        run: node --test tests/agreements.test.mjs
+      - name: Test purchase agreements and presentation
+        run: node --test tests/*.test.mjs
