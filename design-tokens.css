@@ -1,0 +1,44 @@
+:root {
+  /* GuideFlow Hybrid Premium Academy Design Tokens */
+  --gf-bg: #f8fafc;
+  --gf-surface: #ffffff;
+  --gf-surface-muted: #f1f5f9;
+  --gf-text: #0f172a;
+  --gf-text-muted: #64748b;
+
+  --gf-navy: #0f172a;
+  --gf-primary: #2563eb;
+  --gf-primary-soft: #dbeafe;
+  --gf-gold: #c8a45d;
+
+  --gf-success: #16a34a;
+  --gf-warning: #d97706;
+  --gf-danger: #dc2626;
+
+  --gf-radius-sm: 8px;
+  --gf-radius-md: 14px;
+  --gf-radius-lg: 22px;
+
+  --gf-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08);
+  --gf-shadow-md: 0 10px 30px rgba(15, 23, 42, 0.08);
+
+  --gf-space-1: 4px;
+  --gf-space-2: 8px;
+  --gf-space-3: 12px;
+  --gf-space-4: 16px;
+  --gf-space-5: 24px;
+  --gf-space-6: 32px;
+
+  --gf-transition: 180ms ease;
+}
+
+/* Admin Studio theme foundation */
+.admin-premium-card {
+  background: var(--gf-surface);
+  border-radius: var(--gf-radius-md);
+  box-shadow: var(--gf-shadow-sm);
+}
+
+.gf-muted {
+  color: var(--gf-text-muted);
+}
