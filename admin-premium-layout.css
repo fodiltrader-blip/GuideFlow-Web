@@ -1,0 +1,47 @@
+/* GuideFlow Hybrid Premium Admin Layout v1 */
+.admin-shell.v2{
+  min-height:100vh;
+  background:var(--gf-bg, #f6f8fc);
+  color:var(--gf-text,#132238);
+}
+.admin-shell.v2 .admin-side{
+  background:#0f1b33;
+  color:#fff;
+  border:0;
+  box-shadow:0 20px 60px rgba(15,27,51,.18);
+}
+.admin-shell.v2 .admin-brand span{
+  background:linear-gradient(135deg,#d9b35b,#f6d98b);
+  color:#0f1b33;
+  box-shadow:0 8px 20px rgba(217,179,91,.25);
+}
+.admin-shell.v2 .admin-side nav a{
+  border-radius:12px;
+  transition:.2s ease;
+}
+.admin-shell.v2 .admin-side nav a:hover{
+  background:rgba(255,255,255,.1);
+  transform:translateX(-3px);
+}
+.admin-shell.v2 .admin-main{
+  max-width:1500px;
+}
+.admin-shell.v2 .stats-grid article,
+.admin-shell.v2 .course-panel{
+  border-radius:22px;
+  box-shadow:0 14px 35px rgba(20,34,56,.07);
+}
+.admin-shell.v2 .stats-grid article strong{
+  font-size:34px;
+}
+.admin-shell.v2 .primary-btn{
+  border-radius:12px;
+  background:linear-gradient(135deg,#123c78,#205db3);
+}
+.admin-shell.v2 .secondary-btn,
+.admin-shell.v2 .mini-btn{
+  border-radius:12px;
+}
+@media(max-width:760px){
+ .admin-shell.v2 .admin-main{padding:16px}
+}
