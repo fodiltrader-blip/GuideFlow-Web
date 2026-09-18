@@ -1,0 +1,57 @@
+/* GuideFlow Admin Premium Content Layer v1 */
+
+.admin-shell.v2 .course-preview-grid,
+.admin-shell.v2 .preview-language,
+.admin-shell.v2 .preview-module,
+.admin-shell.v2 .issued-card,
+.admin-shell.v2 .links-tools,
+.admin-shell.v2 .agreement-card {
+  border-radius: 22px;
+  border: 1px solid rgba(148,163,184,.18);
+  background: var(--gf-surface, #ffffff);
+  box-shadow: 0 18px 45px rgba(15,23,42,.08);
+}
+
+.admin-shell.v2 .preview-module {
+  padding: 22px;
+  margin-bottom: 18px;
+}
+
+.admin-shell.v2 .preview-module-head {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:16px;
+}
+
+.admin-shell.v2 .preview-module-head span,
+.admin-shell.v2 .lang-pill {
+  background: rgba(37,99,235,.1);
+  color: var(--gf-primary, #2563eb);
+  border-radius:999px;
+  padding:6px 12px;
+  font-weight:700;
+}
+
+.admin-shell.v2 .preview-lessons article {
+  display:flex;
+  gap:14px;
+  padding:16px;
+  margin-top:10px;
+  border-radius:16px;
+  background:#f8fafc;
+}
+
+.admin-shell.v2 .issued-card,
+.admin-shell.v2 .agreement-card {
+  padding:24px;
+}
+
+.admin-shell.v2 .row-actions button,
+.admin-shell.v2 button {
+  border-radius:12px;
+}
+
+@media(max-width:800px){
+ .admin-shell.v2 .preview-lessons article{flex-direction:column}
+}
