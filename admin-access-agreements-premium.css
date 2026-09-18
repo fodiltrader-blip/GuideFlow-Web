@@ -1,0 +1,42 @@
+/* GuideFlow Premium Access & Agreements Layer
+   Hybrid Premium Academy design extension
+*/
+
+.access-panel,
+.agreement-card,
+.link-card,
+.release-card {
+  border-radius: var(--gf-radius-lg, 18px);
+  box-shadow: var(--gf-shadow-md, 0 12px 30px rgba(0,0,0,.08));
+  border: 1px solid rgba(15, 23, 42, .08);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.access-panel:hover,
+.agreement-card:hover,
+.link-card:hover,
+.release-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--gf-shadow-lg, 0 18px 40px rgba(0,0,0,.12));
+}
+
+.status-badge {
+  border-radius: 999px;
+  font-weight: 600;
+  padding: .35rem .75rem;
+}
+
+.agreement-card .amount,
+.payment-summary {
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+
+@media (max-width: 768px) {
+  .access-panel,
+  .agreement-card,
+  .link-card,
+  .release-card {
+    border-radius: 14px;
+  }
+}
