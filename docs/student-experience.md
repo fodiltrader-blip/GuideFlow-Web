@@ -41,4 +41,13 @@ Browser scripts require Playwright and Chromium. Optional `PLAYWRIGHT_MODULE` an
 
 ## Delivery
 
-This change is prepared on `design/student-experience-premium` for review. Merging and live deployment are separate from the verified local implementation. See the matching project-log entry in the private source repository for review links and status.
+PR #10 is merged and the implementation is deployed. See the deployment verification below and the matching project-log entry in the private source repository.
+
+
+## 2026-09-18 — Merge and production deployment
+
+- GuideFlow-Web PR #10 merged as `7ffc8c5da23b953fecbf0dcf972d82c22c8a497d`; GuideFlow documentation PR #9 merged as `ebb254672645679732d75e0e990b8b4a54ce1bad`.
+- [GitHub Pages deployment](https://github.com/fodiltrader-blip/GuideFlow-Web/actions/runs/35338584393) completed successfully. [Main-branch checks](https://github.com/fodiltrader-blip/GuideFlow-Web/actions/runs/35338585095) passed.
+- Verified the live entry gate at https://fodiltrader-blip.github.io/GuideFlow-Web/ after deployment: new light premium styling, versioned student stylesheet and application script, initialized image dialog, and no captured browser errors.
+- Status: merged and deployed. Existing private access remains required. Course interactions were verified with synthetic encrypted fixtures before merging; no real customer access links or production external lesson images were opened for this deployment check.
+- Next: any further student improvements can build on this deployed version; persistent progress tracking remains outside this change.
