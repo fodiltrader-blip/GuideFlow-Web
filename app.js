@@ -41,7 +41,10 @@ const ui = {
     refresh: 'تحديث',
     refreshing: 'جاري التحديث…',
     updated: 'تم تحديث المحتوى',
-    updateFailed: 'تعذر تحديث المحتوى'
+    updateFailed: 'تعذر تحديث المحتوى',
+    previous: 'الدرس السابق', next: 'الدرس التالي', lessons: 'دروس', modules: 'وحدات',
+    outline: 'محتوى الكورس', theme: 'تبديل المظهر', language: 'Changer la langue en français',
+    empty: 'لا توجد دروس متاحة حاليًا', position: 'الدرس', of: 'من'
   },
   fr: {
     locked: 'Ce guide est accessible via un lien privé.',
@@ -72,7 +75,10 @@ const ui = {
     refresh: 'Actualiser',
     refreshing: 'Actualisation…',
     updated: 'Contenu actualisé',
-    updateFailed: 'Impossible d’actualiser le contenu'
+    updateFailed: 'Impossible d’actualiser le contenu',
+    previous: 'Leçon précédente', next: 'Leçon suivante', lessons: 'leçons', modules: 'modules',
+    outline: 'Plan du cours', theme: 'Changer le thème', language: 'تغيير اللغة إلى العربية',
+    empty: 'Aucune leçon disponible pour le moment', position: 'Leçon', of: 'sur'
   }
 };
 
@@ -160,7 +166,7 @@ function currentContent() {
 }
 
 function firstLesson() {
-  return currentContent().modules?.[0]?.lessons?.[0] || null;
+  return (currentContent().modules || []).flatMap(module => module.lessons || [])[0] || null;
 }
 
 function findLesson(id) {
@@ -187,14 +193,16 @@ function openLesson(id) {
   state.view = 'lesson';
   state.lessonId = id;
   renderApp();
-  scrollTo({ top: 0, behavior: 'smooth' });
+  document.querySelector('.main-area')?.focus({ preventScroll: true });
+  scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
 }
 
 function goHome() {
   state.view = 'dashboard';
   state.lessonId = null;
   renderApp();
-  scrollTo({ top: 0, behavior: 'smooth' });
+  document.querySelector('.main-area')?.focus({ preventScroll: true });
+  scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
 }
 
 function sidebar(content, t) {
@@ -205,9 +213,9 @@ function sidebar(content, t) {
     </div>`).join('');
 
   return `
-    <aside class="sidebar">
+    <aside class="sidebar" id="courseOutline">
       <div class="brand"><div class="brand-mark">G</div><div><strong>GuideFlow</strong><span>${escapeHtml(content.courseTitle)}</span></div></div>
-      <nav>
+      <nav aria-label="${escapeHtml(t.outline)}">
         <button class="nav-item ${state.view === 'dashboard' ? 'active' : ''}" id="homeBtn"><span>⌂</span>${escapeHtml(t.home)}</button>
         <div class="side-label">${escapeHtml(t.course)}</div>
         ${modules}
@@ -222,14 +230,14 @@ function dashboard(content, t) {
     <article class="module-row">
       <span class="module-no">${escapeHtml(module.number || '')}</span>
       <div class="module-copy"><strong>${escapeHtml(module.title)}</strong><div>${(module.lessons || []).map(item => `<button data-lesson="${escapeHtml(item.id)}">${escapeHtml(item.tool)} — ${escapeHtml(item.title)}</button>`).join('')}</div></div>
-      <span class="available">${escapeHtml(t.available)}</span>
+      <span class="available">${(module.lessons || []).length} ${escapeHtml(t.lessons)}</span>
     </article>`).join('');
 
   return `
     <section class="hero">
       <div class="hero-copy">
         <span class="eyebrow">${escapeHtml(t.training)}</span>
-        <h1>${escapeHtml(t.hero)}</h1>
+        <h1>${escapeHtml(content.courseTitle || t.hero)}</h1>
         <p>${escapeHtml(t.heroBody)}</p>
         ${lesson ? `<button class="primary-btn" data-lesson="${escapeHtml(lesson.id)}">${escapeHtml(t.start)} <span>←</span></button>` : ''}
       </div>
@@ -238,8 +246,21 @@ function dashboard(content, t) {
         <em class="badge b1">GuideFlow</em><em class="badge b2">AR / FR</em>
       </div>
     </section>
-    <section class="section-head"><div><span class="eyebrow dark-eye">${escapeHtml(t.course)}</span><h2>${escapeHtml(content.courseSubtitle)}</h2></div><span class="version">V1</span></section>
-    <div class="module-list">${modules}</div>`;
+    <section class="section-head"><div><span class="eyebrow dark-eye">${escapeHtml(t.course)}</span><h2>${escapeHtml(content.courseSubtitle)}</h2></div><span class="version">${(content.modules || []).length} ${escapeHtml(t.modules)}</span></section>
+    <div class="module-list">${modules || `<p class="plain-card">${escapeHtml(t.empty)}</p>`}</div>`;
+}
+
+// Keep this outside page-wrap: specialized lesson renderers replace that container.
+function lessonNavigation(content, t) {
+  const lessons = (content.modules || []).flatMap(module => module.lessons || []);
+  const index = lessons.findIndex(lesson => lesson.id === state.lessonId);
+  if (index < 0) return '';
+  const link = (lesson, label) => lesson ? `<button data-lesson="${escapeHtml(lesson.id)}"><span>${escapeHtml(label)}</span><strong>${escapeHtml(lesson.title)}</strong></button>` : '<span></span>';
+  return `<nav class="student-lesson-nav" aria-label="${escapeHtml(t.outline)}">
+    <p>${escapeHtml(t.position)} ${index + 1} ${escapeHtml(t.of)} ${lessons.length}</p>
+    <div>${link(lessons[index - 1], t.previous)}${link(lessons[index + 1], t.next)}</div>
+    <button class="student-home" id="lessonHomeBtn">${escapeHtml(t.back)}</button>
+  </nav>`;
 }
 
 function interfaceMock(lesson, t) {
@@ -307,25 +328,33 @@ function renderApp() {
   document.body.dataset.theme = state.theme;
 
   app.innerHTML = `
-    <div class="app-shell">
+    <div class="app-shell" data-view="${state.view}">
       ${sidebar(content, t)}
-      <main class="main-area">
+      <main class="main-area" tabindex="-1">
         <header class="topbar">
+          <button class="student-outline-toggle" id="outlineBtn" aria-controls="courseOutline" aria-expanded="false">${escapeHtml(t.outline)}</button>
           <div class="crumb"><span>GuideFlow</span><em>/</em><strong>${state.view === 'dashboard' ? escapeHtml(t.home) : escapeHtml(findLesson(state.lessonId)?.title || '')}</strong></div>
           <div class="top-actions">
             ${state.refreshMessage ? `<span class="refresh-state">${escapeHtml(state.refreshMessage)}</span>` : ''}
             <button id="refreshCourseBtn" class="refresh-btn" title="${escapeHtml(t.refresh)}">↻ <span>${escapeHtml(t.refresh)}</span></button>
-            <button id="langBtn">${state.language === 'ar' ? 'FR' : 'AR'}</button>
-            <button id="themeBtn">◐</button>
+            <button id="langBtn" aria-label="${escapeHtml(t.language)}">${state.language === 'ar' ? 'FR' : 'AR'}</button>
+            <button id="themeBtn" aria-label="${escapeHtml(t.theme)}">◐</button>
           </div>
         </header>
         <div class="page-wrap">${state.view === 'dashboard' ? dashboard(content, t) : lessonPage(content, t)}</div>
+        ${state.view === 'lesson' ? lessonNavigation(content, t) : ''}
       </main>
     </div>`;
 
   document.querySelectorAll('[data-lesson]').forEach(button => button.addEventListener('click', () => openLesson(button.dataset.lesson)));
   document.getElementById('homeBtn')?.addEventListener('click', goHome);
   document.getElementById('backBtn')?.addEventListener('click', goHome);
+  document.getElementById('lessonHomeBtn')?.addEventListener('click', goHome);
+  document.getElementById('outlineBtn')?.addEventListener('click', event => {
+    const open = event.currentTarget.getAttribute('aria-expanded') !== 'true';
+    event.currentTarget.setAttribute('aria-expanded', String(open));
+    document.querySelector('.app-shell').classList.toggle('outline-open', open);
+  });
   document.getElementById('langBtn')?.addEventListener('click', () => setLanguage(state.language === 'ar' ? 'fr' : 'ar'));
   document.getElementById('themeBtn')?.addEventListener('click', toggleTheme);
   document.getElementById('refreshCourseBtn')?.addEventListener('click', refreshCourse);
