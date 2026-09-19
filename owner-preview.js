@@ -7,6 +7,22 @@
     return localStorage.getItem(OWNER_TOKEN_KEY) || '';
   }
 
+  function injectOwnerPreviewLink() {
+    const links = [...document.querySelectorAll('a')];
+    const target = links.find(link => link.textContent.includes('فتح GuideFlow'));
+    if (!target || document.getElementById('ownerPreviewLink')) return;
+
+    const preview = target.cloneNode(true);
+    preview.id = 'ownerPreviewLink';
+    preview.textContent = 'معاينة كمالك ↗';
+    preview.href = '#';
+    preview.addEventListener('click', event => {
+      event.preventDefault();
+      window.GuideFlowOwnerPreview.open();
+    });
+    target.insertAdjacentElement('afterend', preview);
+  }
+
   window.GuideFlowOwnerPreview = {
     setToken(token) {
       if (!token) return;
@@ -21,4 +37,8 @@
       window.open(`./#/access/${encodeURIComponent(token)}`, '_blank', 'noopener');
     }
   };
+
+  const observer = new MutationObserver(injectOwnerPreviewLink);
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+  injectOwnerPreviewLink();
 })();
