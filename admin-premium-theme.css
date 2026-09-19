@@ -59,6 +59,47 @@
   border-radius:18px;
 }
 
+/* Night Mode */
+body.gf-night .admin-shell.v2,
+.admin-shell.v2.gf-night{
+  background:#070b14;
+  color:#f8fafc;
+}
+
+body.gf-night .admin-shell.v2 .admin-main,
+.admin-shell.v2.gf-night .admin-main{
+  background:linear-gradient(180deg,#070b14 0%,#111827 100%);
+}
+
+body.gf-night .admin-shell.v2 .stats-grid article,
+body.gf-night .admin-shell.v2 .course-panel,
+body.gf-night .admin-shell.v2 .course-details,
+body.gf-night .admin-shell.v2 .preview-language,
+body.gf-night .admin-shell.v2 .course-meta>div,
+.admin-shell.v2.gf-night .stats-grid article,
+.admin-shell.v2.gf-night .course-panel{
+  background:#111827;
+  border-color:rgba(255,255,255,.08);
+  color:#f8fafc;
+  box-shadow:0 14px 40px rgba(0,0,0,.25);
+}
+
+body.gf-night .admin-shell.v2 p,
+body.gf-night .admin-shell.v2 small,
+.admin-shell.v2.gf-night p,
+.admin-shell.v2.gf-night small{
+  color:#94a3b8;
+}
+
+body.gf-night .admin-shell.v2 input,
+body.gf-night .admin-shell.v2 textarea,
+.admin-shell.v2.gf-night input,
+.admin-shell.v2.gf-night textarea{
+  background:#0f172a;
+  color:#f8fafc;
+  border-color:rgba(255,255,255,.12);
+}
+
 @media(max-width:760px){
  .admin-shell.v2 .course-panel,
  .admin-shell.v2 .stats-grid article{
