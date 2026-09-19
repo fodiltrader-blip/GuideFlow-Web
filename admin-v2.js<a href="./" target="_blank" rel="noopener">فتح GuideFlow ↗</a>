@@ -333,7 +333,7 @@ function render() {
           <a href="#create">إنشاء رابط</a>
           <a href="#links">إدارة الروابط</a>
           <a href="#agreements">اتفاقات الشراء</a>
-          <a href="./" target="_blank" rel="noopener">فتح GuideFlow ↗</a>
+          <a href="#" id="ownerPreviewBtn">معاينة كمالك ↗</a>
         </nav>
         <div class="token-state"><i></i><div><b>GitHub متصل</b><small>التوكن في ذاكرة الصفحة فقط</small></div></div>
         <button class="ghost-btn" id="disconnectBtn">إنهاء الجلسة</button>
@@ -446,7 +446,17 @@ function bindEvents() {
   $('#disconnectBtn')?.addEventListener('click', disconnect);
   $('#copyIssued')?.addEventListener('click', copyIssuedLink);
   $('#openIssued')?.addEventListener('click', () => window.open(lastIssued.link, '_blank', 'noopener'));
+  $('#ownerPreviewBtn')?.addEventListener('click', (event) => {
+  event.preventDefault();
 
+   if (window.GuideFlowOwnerPreview?.open) {
+    window.GuideFlowOwnerPreview.open();
+   } else {
+    window.open('./#/access/OWNER_TOKEN', '_blank', 'noopener');
+  }
+});
+
+  
   $('#linksSearch')?.addEventListener('input', event => { searchText = event.target.value; render(); $('#linksSearch')?.focus(); });
   $('#statusFilter')?.addEventListener('change', event => { statusFilter = event.target.value; render(); });
   $('#selectVisibleBtn')?.addEventListener('click', toggleVisibleSelection);
