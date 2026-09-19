@@ -50,3 +50,39 @@
 @media(max-width:760px){
  .admin-shell.v2 .admin-side{border-radius:18px}
 }
+
+/* GuideFlow Admin Dark Mode */
+.admin-shell.v2[data-theme="dark"],
+body[data-theme="dark"] .admin-shell.v2{
+  color:#e5e7eb;
+}
+
+body[data-theme="dark"] .admin-main,
+body[data-theme="dark"] .course-panel,
+body[data-theme="dark"] .create-panel,
+body[data-theme="dark"] .links-panel,
+body[data-theme="dark"] .section-title,
+body[data-theme="dark"] .panel-head{
+  background:#111827;
+  color:#e5e7eb;
+}
+
+body[data-theme="dark"] input,
+body[data-theme="dark"] select,
+body[data-theme="dark"] textarea{
+  background:#1f2937;
+  color:#f9fafb;
+  border-color:#374151;
+}
+
+body[data-theme="dark"] .section-subtitle,
+body[data-theme="dark"] p,
+body[data-theme="dark"] small{
+  color:#9ca3af;
+}
+
+body[data-theme="dark"] .secondary-btn{
+  background:#1f2937;
+  color:#f9fafb;
+  border-color:#374151;
+}
