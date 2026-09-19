@@ -17,6 +17,23 @@
       "language": "ar",
       "createdAt": "2026-09-16T14:50:49.900Z",
       "expiresAt": null
+    },
+    {
+      "id": "owner-preview",
+      "tokenHash": "ae69c31c22275d4c3e023b94bb2d0ecf7dd4e0751c801591515c934b07bd8c8a",
+      "active": true,
+      "mode": "live",
+      "liveBundle": "course-live.json",
+      "wrappedKey": {
+        "alg": "AES-GCM-256",
+        "nonce": "S93SqJPg35oDYGZo",
+        "ciphertext": "A7OEUxuDDfwIpBBV9f5W_z7_Kqd_hKW2A-Lbyoi3skwfK7TIEcL99xrknCLCIMpakWvZda_YQOK9VWE",
+        "kdf": "SHA-256(token)"
+      },
+      "label": "Owner Preview",
+      "language": "ar",
+      "createdAt": "2026-09-19T00:00:00.000Z",
+      "expiresAt": null
     }
   ]
 }
